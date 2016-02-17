@@ -1,0 +1,28 @@
+{
+  "name": "browserstack-node-api",
+  "version": "0.1.0",
+  "description": "Node client to run selenium tests on BrowserStack",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "./node_modules/.bin/eslint lib/* index.js",
+    "test": "NODE_ENV=testing ./node_modules/.bin/mocha"
+  },
+  "keywords": [
+    "BrowserStack",
+    "selenium",
+    "testing"
+  ],
+  "author": "BrowserStack",
+  "license": "MIT",
+  "dependencies": {
+    "npmlog": "2.0.2",
+    "unzip": "0.1.11"
+  },
+  "devDependencies": {
+    "eslint": "1.10.3",
+    "expect.js": "0.3.1",
+    "mocha": "2.4.5",
+    "mocks": "0.0.15",
+    "sinon": "1.17.3"
+  }
+}
