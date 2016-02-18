@@ -1,6 +1,6 @@
-var browserstackApi = require('./index');
+var browserstack = require('browserstack');
 
-var api = new browserstackApi();
+var local = new browserstack.Local();
 var webdriver = require('selenium-webdriver');
 var identifier = 'adqqwdqwd';
 
@@ -31,22 +31,22 @@ var options = {
   onlyAutomate: true
 };
 
-api.start(options, function(error) {
-  console.log('Is Running ' + api.isRunning());
+local.start(options, function(error) {
+  console.log('Is Running ' + local.isRunning());
   console.log('Started');
-  console.log('Is Running ' + api.isRunning());
+  console.log('Is Running ' + local.isRunning());
   capabilities['browserstack.user'] = process.env.BROWSERSTACK_USERNAME;
-  console.log('Is Running ' + api.isRunning());
+  console.log('Is Running ' + local.isRunning());
   capabilities['browserstack.key'] = process.env.BROWSERSTACK_ACCESS_KEY
-    console.log('Is Running ' + api.isRunning());
+    console.log('Is Running ' + local.isRunning());
   driver = new webdriver.Builder().usingServer('http://hub.browserstack.com/wd/hub').withCapabilities(capabilities).build();
-  console.log('Is Running ' + api.isRunning());
+  console.log('Is Running ' + local.isRunning());
   driver.get("http://localhost:3000").then(function() {
-    console.log('Is Running ' + api.isRunning());
+    console.log('Is Running ' + local.isRunning());
     driver.quit().then(function() {
-      console.log('Is Running ' + api.isRunning());
-      api.stop(function() {
-        console.log('Is Running ' + api.isRunning());
+      console.log('Is Running ' + local.isRunning());
+      local.stop(function() {
+        console.log('Is Running ' + local.isRunning());
         console.log('Stopped');
       });
     });

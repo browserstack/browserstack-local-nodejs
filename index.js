@@ -1,6 +1,6 @@
 var browserStackTunnel = require('./lib/browserStackTunnel');
 
-function BrowserStackApi() {
+function Local() {
   var tunnel = null;
 
   this.start = function(options, callback) {
@@ -25,4 +25,4 @@ function BrowserStackApi() {
   };
 }
 
-module.exports = BrowserStackApi;
+module.exports.Local = Local;

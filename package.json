@@ -1,5 +1,5 @@
 {
-  "name": "browserstack-node-api",
+  "name": "browserstack",
   "version": "0.1.0",
   "description": "Node client to run selenium tests on BrowserStack",
   "main": "index.js",
