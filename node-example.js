@@ -19,7 +19,7 @@ var options = {
   //  port: 8080,
   //  sslFlag: 0
   //}],
-  //path: 'bin',
+  path: 'bin',
   localIdentifier: identifier,
   verbose: true,
   //proxyUser: '',
@@ -34,11 +34,12 @@ var options = {
 local.start(options, function(error) {
   console.log('Is Running ' + local.isRunning());
   console.log('Started');
-  console.log('Is Running ' + local.isRunning());
+
   capabilities['browserstack.user'] = process.env.BROWSERSTACK_USERNAME;
-  console.log('Is Running ' + local.isRunning());
-  capabilities['browserstack.key'] = process.env.BROWSERSTACK_ACCESS_KEY
-    console.log('Is Running ' + local.isRunning());
+  capabilities['browserstack.key'] = process.env.BROWSERSTACK_ACCESS_KEY;
+  capabilities['browserstack.local'] = true;
+  capabilities['browserstack.localIdentifier'] = identifier;
+
   driver = new webdriver.Builder().usingServer('http://hub.browserstack.com/wd/hub').withCapabilities(capabilities).build();
   console.log('Is Running ' + local.isRunning());
   driver.get("http://localhost:3000").then(function() {
