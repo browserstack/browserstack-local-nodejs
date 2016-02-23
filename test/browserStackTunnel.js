@@ -10,21 +10,6 @@ var expect = require('expect.js'),
 var spawnSpy = sinon.spy(childProcessMock.spawn);
 childProcessMock.spawn = spawnSpy;
 
-var zb = mocks.loadFile('./lib/ZipBinary.js', {
-  https: httpMock,
-  fs: fsMock,
-  unzip: unzipMock
-});
-var ZipBinary = zb.ZipBinary;
-
-var bs = mocks.loadFile('./lib/browserStackTunnel.js', {
-  child_process: childProcessMock,
-  http: httpMock,
-  fs: fsMock,
-  os: osMock,
-  './ZipBinary': ZipBinary
-});
-
 var NEW_BINARY_DIR = '/bin/new',
     NEW_BINARY_FILE = NEW_BINARY_DIR + '/BrowserStackLocal',
     NEW_WIN32_BINARY_FILE = NEW_BINARY_DIR + '/BrowserStackLocal.exe',
@@ -54,6 +39,7 @@ var NEW_BINARY_DIR = '/bin/new',
     PROXY_PORT = '1234';
 
 describe('BrowserStackTunnel', function () {
+  var bs, helper, platformMock, archMock, binaryPathMock, zipPathMock, logBinaryOutputMock, warnLogMock, infoLogMock, ZipBinary;
   beforeEach(function () {
     fsMock.fileNameModded = undefined;
     fsMock.mode = undefined;
@@ -63,6 +49,51 @@ describe('BrowserStackTunnel', function () {
     httpMock.url = undefined;
     osMock._platform = 'unknown';
     osMock._arch = 'unknown';
+
+    platformMock = sinon.stub();
+    archMock = sinon.stub();
+    binaryPathMock = sinon.stub();
+    zipPathMock = sinon.stub();
+    logBinaryOutputMock = sinon.stub();
+    warnLogMock = sinon.stub();
+    infoLogMock = sinon.stub();
+
+    helper = {
+      helper: function() {
+        this._basePath = 'default';
+
+        this.getPlatform = platformMock;
+        this.getArch = archMock;
+        this.getBinaryPath = binaryPathMock;
+        this.getZipPath = zipPathMock;
+        this.logBinaryOutput = logBinaryOutputMock;
+        this.setBasePath = function(path) {
+          _basePath = path
+        };
+        this.getBasePath = function() {
+          return _basePath
+        };
+        this.log = {
+          warn: warnLogMock,
+          info: infoLogMock
+        };
+      }
+    };
+    var zb = mocks.loadFile('./lib/ZipBinary.js', {
+      https: httpMock,
+      fs: fsMock,
+      unzip: unzipMock,
+      './helper': helper
+    });
+    ZipBinary = zb.ZipBinary;
+    bs = mocks.loadFile('./lib/browserStackTunnel.js', {
+      child_process: childProcessMock,
+      http: httpMock,
+      fs: fsMock,
+      os: osMock,
+      './helper': helper,
+      './ZipBinary': ZipBinary
+    });
   });
 
   it('should error if stopped before started', function (done) {
@@ -77,6 +108,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should error if no server listening on the specified host and port', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
       path: WIN32_BINARY_DIR
@@ -92,6 +124,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should error if user provided an invalid key', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: 'MONKEY_KEY',
       path: WIN32_BINARY_DIR
@@ -107,6 +140,7 @@ describe('BrowserStackTunnel', function () {
   });
   
   it('should error if started when already running', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
       path: WIN32_BINARY_DIR
@@ -128,6 +162,7 @@ describe('BrowserStackTunnel', function () {
   });
   
   it('should error if started when another instance is already running', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel1 = new bs.BrowserStackTunnel({
       key: KEY,
       path: WIN32_BINARY_DIR
@@ -158,6 +193,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should download new binary if prompted that a new version exists as auto download is not compatible with our use of spawn', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: 'MONKEY_KEY',
       path: WIN32_BINARY_DIR
@@ -182,6 +218,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support multiple hosts', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -210,6 +247,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support no hosts', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -236,6 +274,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should use the specified binary directory', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -264,6 +303,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the localIdentifier option', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -295,6 +335,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the v (verbose) option', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -312,7 +353,7 @@ describe('BrowserStackTunnel', function () {
           WIN32_BINARY_FILE, [
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-            '-v'
+            '-vvv'
           ]
         );
         done();
@@ -325,6 +366,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the force option', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -355,6 +397,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the forcelocal option', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -385,6 +428,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the onlyAutomate option', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -415,6 +459,7 @@ describe('BrowserStackTunnel', function () {
   });
 
   it('should support the proxy options', function (done) {
+    binaryPathMock.returns(WIN32_BINARY_FILE);
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
@@ -461,6 +506,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if binary is not present', function (done) {
+      platformMock.returns('win32');
+      archMock.returns(null);
+      binaryPathMock.returns(NEW_WIN32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: NEW_BINARY_DIR
@@ -482,6 +530,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if prompted that a new version exists as auto download is not compatible with our use of spawn', function (done) {
+      binaryPathMock.returns(WIN32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: WIN32_BINARY_DIR
@@ -506,6 +555,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should use the specified binary directory', function (done) {
+      binaryPathMock.returns(WIN32_BINARY_FILE);
       spawnSpy.reset();
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
@@ -541,6 +591,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if binary is not present', function (done) {
+      platformMock.returns('darwin');
+      archMock.returns('x64');
+      binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: NEW_BINARY_DIR
@@ -562,6 +615,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if prompted that a new version exists as auto download is not compatible with our use of spawn', function (done) {
+      platformMock.returns('darwin');
+      archMock.returns('x64');
+      binaryPathMock.returns(OSX_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: OSX_BINARY_DIR
@@ -586,6 +642,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should use the specified bin directory', function (done) {
+      binaryPathMock.returns(OSX_BINARY_FILE);
       spawnSpy.reset();
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
@@ -621,6 +678,9 @@ describe('BrowserStackTunnel', function () {
     });
  
     it('should download new binary if binary is not present', function (done) {
+      platformMock.returns('linux');
+      archMock.returns('x64');
+      binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: NEW_BINARY_DIR
@@ -642,6 +702,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if prompted that a new version exists as auto download is not compatible with our use of spawn', function (done) {
+      platformMock.returns('linux');
+      archMock.returns('x64');
+      binaryPathMock.returns(LINUX_64_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: LINUX_64_BINARY_DIR
@@ -666,6 +729,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should use the specified bin directory', function (done) {
+      binaryPathMock.returns(LINUX_64_BINARY_FILE);
       spawnSpy.reset();
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
@@ -701,6 +765,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if binary is not present', function (done) {
+      platformMock.returns('linux');
+      archMock.returns('ia32');
+      binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: NEW_BINARY_DIR
@@ -722,6 +789,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should download new binary if prompted that a new version exists as auto download is not compatible with our use of spawn', function (done) {
+      platformMock.returns('linux');
+      archMock.returns('ia32');
+      binaryPathMock.returns(LINUX_32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
         path: LINUX_32_BINARY_DIR
@@ -746,6 +816,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     it('should use the specified bin directory', function (done) {
+      binaryPathMock.returns(LINUX_32_BINARY_FILE);
       spawnSpy.reset();
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
