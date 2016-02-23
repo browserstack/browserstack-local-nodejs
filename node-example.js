@@ -32,6 +32,10 @@ var options = {
 };
 
 local.start(options, function(error) {
+  if(error) {
+    console.log("Got Error From Local " + error);
+    process.exit();
+  }
   console.log('Is Running ' + local.isRunning());
   console.log('Started');
 

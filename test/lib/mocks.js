@@ -1,6 +1,7 @@
 var util = require('util'),
   mocks = require('mocks'),
-  EventEmitter = require('events').EventEmitter;
+  EventEmitter = require('events').EventEmitter,
+  sinon = require('sinon');
 
 var childProcess = {
   cleanUp: function() {
@@ -131,10 +132,30 @@ var os = {
   arch: function () {
     return this._arch;
   }
-}
+};
+
+var tail = {
+  Tail: function(file) {
+    this.lineFunction = null;
+    this.errorFunction = null;
+    this.on = function(kind, func) {
+      if(kind === 'line') {
+        this.lineFunction = func;
+      } else {
+        this.errorFunction = func;
+      }
+    };
+    this.emit = function(state, text) {
+      this.lineFunction(text);
+    };
+    this.unwatch = function() {
+    };
+  }
+};
 
 exports.childProcessMock = childProcess;
 exports.httpMock = ServerRequest;
 exports.fsMock = fileSystem;
 exports.unzipMock = unzip;
+exports.tailMock = tail;
 exports.osMock = os;

@@ -5,6 +5,7 @@ var expect = require('expect.js'),
     fsMock = require('./lib/mocks').fsMock,
     unzipMock = require('./lib/mocks').unzipMock,
     osMock = require('./lib/mocks').osMock,
+    tailMock = require('./lib/mocks').tailMock,
     sinon = require('sinon');
 
 var spawnSpy = sinon.spy(childProcessMock.spawn);
@@ -36,10 +37,11 @@ var NEW_BINARY_DIR = '/bin/new',
     PROXY_HOST = 'fakehost.com',
     PROXY_USER = 'proxyuser',
     PROXY_PASS = 'proxypass',
-    PROXY_PORT = '1234';
+    PROXY_PORT = '1234',
+    LOG_FILE_PATH = '';
 
 describe('BrowserStackTunnel', function () {
-  var bs, helper, platformMock, archMock, binaryPathMock, zipPathMock, logBinaryOutputMock, warnLogMock, infoLogMock, ZipBinary;
+  var bs, helper, platformMock, archMock, binaryPathMock, zipPathMock, logBinaryOutputMock, warnLogMock, infoLogMock, ZipBinary, logFilePathMock;
   beforeEach(function () {
     fsMock.fileNameModded = undefined;
     fsMock.mode = undefined;
@@ -57,6 +59,7 @@ describe('BrowserStackTunnel', function () {
     logBinaryOutputMock = sinon.stub();
     warnLogMock = sinon.stub();
     infoLogMock = sinon.stub();
+    logFilePathMock = sinon.stub().returns('');
 
     helper = {
       helper: function() {
@@ -65,6 +68,7 @@ describe('BrowserStackTunnel', function () {
         this.getPlatform = platformMock;
         this.getArch = archMock;
         this.getBinaryPath = binaryPathMock;
+        this.getLogFilePath = logFilePathMock;
         this.getZipPath = zipPathMock;
         this.logBinaryOutput = logBinaryOutputMock;
         this.setBasePath = function(path) {
@@ -90,6 +94,7 @@ describe('BrowserStackTunnel', function () {
     bs = mocks.loadFile('./lib/browserStackTunnel.js', {
       child_process: childProcessMock,
       http: httpMock,
+      tail: tailMock,
       fs: fsMock,
       os: osMock,
       './helper': helper,
@@ -120,7 +125,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  **Error: Could not connect to server: ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **Error: Could not connect to server: ----monkey');
     }, 100);
   });
 
@@ -136,7 +141,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  **Error: You provided an invalid key ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **Error: You provided an invalid key ----monkey');
     }, 100);
   });
 
@@ -158,7 +163,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -184,12 +189,12 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  **Error: There is another JAR already running ----monkey');
+        browserStackTunnel2.tail.emit('mock:child_process:stdout:data', 'monkey-----  **Error: There is another JAR already running ----monkey');
       }, 100);
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel1.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -211,9 +216,9 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     }, 100);
   });
@@ -235,7 +240,9 @@ describe('BrowserStackTunnel', function () {
           spawnSpy,
           WIN32_BINARY_FILE, [
             KEY,
-            HOST_NAME + ',' + PORT + ',' + SSL_FLAG + ',' + HOST_NAME2 + ',' + PORT2 + ',' + SSL_FLAG2
+            HOST_NAME + ',' + PORT + ',' + SSL_FLAG + ',' + HOST_NAME2 + ',' + PORT2 + ',' + SSL_FLAG2,
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -243,7 +250,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -263,6 +270,8 @@ describe('BrowserStackTunnel', function () {
           spawnSpy,
           WIN32_BINARY_FILE, [
             KEY,
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -270,7 +279,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -291,7 +300,9 @@ describe('BrowserStackTunnel', function () {
           spawnSpy,
           WIN32_BINARY_FILE, [
             KEY,
-            HOST_NAME + ',' + PORT + ',' + SSL_FLAG
+            HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -299,7 +310,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -323,7 +334,9 @@ describe('BrowserStackTunnel', function () {
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
             '-localIdentifier',
-            'my_tunnel'
+            'my_tunnel',
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -331,7 +344,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -354,7 +367,9 @@ describe('BrowserStackTunnel', function () {
           WIN32_BINARY_FILE, [
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-            '-vvv'
+            '-vvv',
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -362,7 +377,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -385,7 +400,9 @@ describe('BrowserStackTunnel', function () {
           WIN32_BINARY_FILE, [
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-            '-force'
+            '-force',
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -393,7 +410,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -416,7 +433,9 @@ describe('BrowserStackTunnel', function () {
           WIN32_BINARY_FILE, [
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-            '-forcelocal'
+            '-forcelocal',
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -424,7 +443,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -447,7 +466,9 @@ describe('BrowserStackTunnel', function () {
           WIN32_BINARY_FILE, [
             KEY,
             HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-            '-onlyAutomate'
+            '-onlyAutomate',
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -455,7 +476,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -488,7 +509,9 @@ describe('BrowserStackTunnel', function () {
             '-proxyUser',
             PROXY_USER,
             '-proxyPass',
-            PROXY_PASS
+            PROXY_PASS,
+            '-logFile',
+            LOG_FILE_PATH
           ]
         );
         done();
@@ -496,7 +519,7 @@ describe('BrowserStackTunnel', function () {
     });
 
     setTimeout(function () {
-      process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+      browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
     }, 100);
   });
 
@@ -526,7 +549,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
 
@@ -548,9 +571,9 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
         setTimeout(function () {
-          process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+          browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
         }, 100);
       }, 100);
     });
@@ -572,7 +595,9 @@ describe('BrowserStackTunnel', function () {
             spawnSpy,
             WIN32_BINARY_FILE, [
               KEY,
-              HOST_NAME + ',' + PORT + ',' + SSL_FLAG
+              HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
+              '-logFile',
+              LOG_FILE_PATH
             ]
           );
           done();
@@ -580,7 +605,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
   });
@@ -611,7 +636,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
 
@@ -635,9 +660,9 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
         setTimeout(function () {
-          process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+          browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
         }, 100);
       }, 100);
     });
@@ -659,7 +684,9 @@ describe('BrowserStackTunnel', function () {
             spawnSpy,
             OSX_BINARY_FILE, [
               KEY,
-              HOST_NAME + ',' + PORT + ',' + SSL_FLAG
+              HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
+              '-logFile',
+              LOG_FILE_PATH
             ]
           );
           done();
@@ -667,7 +694,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
   });
@@ -698,7 +725,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
 
@@ -722,9 +749,9 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
         setTimeout(function () {
-          process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+          browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
         }, 100);
       }, 100);
     });
@@ -746,7 +773,9 @@ describe('BrowserStackTunnel', function () {
             spawnSpy,
             LINUX_64_BINARY_FILE, [
               KEY,
-              HOST_NAME + ',' + PORT + ',' + SSL_FLAG
+              HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
+              '-logFile',
+              LOG_FILE_PATH
             ]
           );
           done();
@@ -754,7 +783,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
   });
@@ -785,7 +814,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
 
@@ -809,9 +838,9 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  **There is a new version of BrowserStackTunnel.jar available on server ----monkey');
         setTimeout(function () {
-          process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+          browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
         }, 100);
       }, 100);
     });
@@ -833,7 +862,9 @@ describe('BrowserStackTunnel', function () {
             spawnSpy,
             LINUX_32_BINARY_FILE, [
               KEY,
-              HOST_NAME + ',' + PORT + ',' + SSL_FLAG
+              HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
+              '-logFile',
+              LOG_FILE_PATH
             ]
           );
           done();
@@ -841,7 +872,7 @@ describe('BrowserStackTunnel', function () {
       });
 
       setTimeout(function () {
-        process.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
+        browserStackTunnel.tail.emit('mock:child_process:stdout:data', 'monkey-----  Press Ctrl-C to exit ----monkey');
       }, 100);
     });
   });

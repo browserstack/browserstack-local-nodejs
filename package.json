@@ -17,6 +17,7 @@
   "dependencies": {
     "npmlog": "2.0.2",
     "os-homedir": "^1.0.1",
+    "tail": "^0.4.0",
     "unzip": "0.1.11"
   },
   "devDependencies": {
