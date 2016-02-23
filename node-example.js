@@ -19,7 +19,7 @@ var options = {
   //  port: 8080,
   //  sslFlag: 0
   //}],
-  path: 'bin',
+  path: 'var',
   localIdentifier: identifier,
   verbose: true,
   //proxyUser: '',
