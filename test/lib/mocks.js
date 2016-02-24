@@ -109,6 +109,9 @@ fileSystem.accessSync = function (fileName, mode) {
   fileSystem.mode = '0755';
 };
 
+fileSystem.open = function (fileName, mode) {
+};
+
 function Extract() {
   this.on('finish', function() {
     this.emit('close');

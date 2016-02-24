@@ -19,7 +19,9 @@ var options = {
   //  port: 8080,
   //  sslFlag: 0
   //}],
-  path: 'var',
+  //f: __dirname,
+  binaryPath: '/var/BrowserStackLocal',
+  logfile: '/var/log/local.log',
   localIdentifier: identifier,
   verbose: true,
   //proxyUser: '',

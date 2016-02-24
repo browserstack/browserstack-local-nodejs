@@ -11,17 +11,12 @@ var expect = require('expect.js'),
 var spawnSpy = sinon.spy(childProcessMock.spawn);
 childProcessMock.spawn = spawnSpy;
 
-var NEW_BINARY_DIR = '/bin/new',
-    NEW_BINARY_FILE = NEW_BINARY_DIR + '/BrowserStackLocal',
-    NEW_WIN32_BINARY_FILE = NEW_BINARY_DIR + '/BrowserStackLocal.exe',
-    OSX_BINARY_DIR = '/bin/darwin',
-    OSX_BINARY_FILE = OSX_BINARY_DIR + '/BrowserStackLocal',
-    LINUX_64_BINARY_DIR = '/bin/linux64',
-    LINUX_64_BINARY_FILE = LINUX_64_BINARY_DIR + '/BrowserStackLocal',
-    LINUX_32_BINARY_DIR = '/bin/linux32',
-    LINUX_32_BINARY_FILE = LINUX_32_BINARY_DIR + '/BrowserStackLocal',
-    WIN32_BINARY_DIR = '/bin/win32',
-    WIN32_BINARY_FILE = WIN32_BINARY_DIR + '/BrowserStackLocal.exe',
+    NEW_BINARY_FILE = '/bin/new' + '/BrowserStackLocal',
+    NEW_WIN32_BINARY_FILE = '/bin/new' + '/BrowserStackLocal.exe',
+    OSX_BINARY_FILE = '/bin/darwin' + '/BrowserStackLocal',
+    LINUX_64_BINARY_FILE = '/bin/linux64' + '/BrowserStackLocal',
+    LINUX_32_BINARY_FILE = '/bin/linux32' + '/BrowserStackLocal',
+    WIN32_BINARY_FILE = '/bin/win32' + '/BrowserStackLocal.exe',
     OSX_BINARY_URL = 'https://www.browserstack.com/browserstack-local/BrowserStackLocal-darwin-x64.zip',
     LINUX_64_BINARY_URL = 'https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-x64.zip',
     LINUX_32_BINARY_URL = 'https://www.browserstack.com/browserstack-local/BrowserStackLocal-linux-ia32.zip',
@@ -63,7 +58,7 @@ describe('BrowserStackTunnel', function () {
 
     helper = {
       helper: function() {
-        this._basePath = 'default';
+        this._binaryPath = 'default';
 
         this.getPlatform = platformMock;
         this.getArch = archMock;
@@ -71,11 +66,11 @@ describe('BrowserStackTunnel', function () {
         this.getLogFilePath = logFilePathMock;
         this.getZipPath = zipPathMock;
         this.logBinaryOutput = logBinaryOutputMock;
-        this.setBasePath = function(path) {
-          _basePath = path
+        this.setBinaryPath = function(path) {
+          _binaryPath = path
         };
-        this.getBasePath = function() {
-          return _basePath
+        this.getBinaryPath = function() {
+          return _binaryPath
         };
         this.log = {
           warn: warnLogMock,
@@ -105,7 +100,7 @@ describe('BrowserStackTunnel', function () {
   it('should error if stopped before started', function (done) {
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.stop(function (error) {
       expect(error.message).to.be('child not started');
@@ -117,7 +112,7 @@ describe('BrowserStackTunnel', function () {
     binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       expect(error.message).to.contain('Could not connect to server');
@@ -133,7 +128,7 @@ describe('BrowserStackTunnel', function () {
     binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: 'MONKEY_KEY',
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       expect(error.message).to.contain('Invalid key');
@@ -149,7 +144,7 @@ describe('BrowserStackTunnel', function () {
     binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
 
     browserStackTunnel.start(function (error) {
@@ -171,12 +166,12 @@ describe('BrowserStackTunnel', function () {
     binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel1 = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
 
     var browserStackTunnel2 = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
 
     browserStackTunnel1.start(function (error) {
@@ -202,7 +197,7 @@ describe('BrowserStackTunnel', function () {
     binaryPathMock.returns(WIN32_BINARY_FILE);
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: 'MONKEY_KEY',
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -229,7 +224,7 @@ describe('BrowserStackTunnel', function () {
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG + ',' + HOST_NAME2 + ',' + PORT2 + ',' + SSL_FLAG2,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -259,7 +254,7 @@ describe('BrowserStackTunnel', function () {
     spawnSpy.reset();
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -289,7 +284,7 @@ describe('BrowserStackTunnel', function () {
     var browserStackTunnel = new bs.BrowserStackTunnel({
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -321,7 +316,7 @@ describe('BrowserStackTunnel', function () {
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
       localIdentifier: 'my_tunnel',
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -355,7 +350,7 @@ describe('BrowserStackTunnel', function () {
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
       verbose: true,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -388,7 +383,7 @@ describe('BrowserStackTunnel', function () {
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
       force: true,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -421,7 +416,7 @@ describe('BrowserStackTunnel', function () {
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
       forcelocal: true,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -454,7 +449,7 @@ describe('BrowserStackTunnel', function () {
       key: KEY,
       hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
       onlyAutomate: true,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -490,7 +485,7 @@ describe('BrowserStackTunnel', function () {
       proxyPass: PROXY_PASS,
       proxyPort: PROXY_PORT,
       proxyHost: PROXY_HOST,
-      path: WIN32_BINARY_DIR
+      binaryPath: WIN32_BINARY_FILE
     });
     browserStackTunnel.start(function (error) {
       if (error) {
@@ -535,7 +530,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(NEW_WIN32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: NEW_BINARY_DIR
+        binaryPath: NEW_WIN32_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -557,7 +552,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(WIN32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: WIN32_BINARY_DIR
+        binaryPath: WIN32_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -584,7 +579,7 @@ describe('BrowserStackTunnel', function () {
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
         hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-        path: WIN32_BINARY_DIR
+        binaryPath: WIN32_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -622,7 +617,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: NEW_BINARY_DIR
+        binaryPath: NEW_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -646,7 +641,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(OSX_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: OSX_BINARY_DIR
+        binaryPath: OSX_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -673,7 +668,7 @@ describe('BrowserStackTunnel', function () {
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
         hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-        path: OSX_BINARY_DIR
+        binaryPath: OSX_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -711,7 +706,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: NEW_BINARY_DIR
+        binaryPath: NEW_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -735,7 +730,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(LINUX_64_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: LINUX_64_BINARY_DIR
+        binaryPath: LINUX_64_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -762,7 +757,7 @@ describe('BrowserStackTunnel', function () {
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
         hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-        path: LINUX_64_BINARY_DIR
+        binaryPath: LINUX_64_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -800,7 +795,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(NEW_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: NEW_BINARY_DIR
+        binaryPath: NEW_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -824,7 +819,7 @@ describe('BrowserStackTunnel', function () {
       binaryPathMock.returns(LINUX_32_BINARY_FILE);
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: 'MONKEY_KEY',
-        path: LINUX_32_BINARY_DIR
+        binaryPath: LINUX_32_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
@@ -851,7 +846,7 @@ describe('BrowserStackTunnel', function () {
       var browserStackTunnel = new bs.BrowserStackTunnel({
         key: KEY,
         hosts: HOST_NAME + ',' + PORT + ',' + SSL_FLAG,
-        path: LINUX_32_BINARY_DIR
+        binaryPath: LINUX_32_BINARY_FILE
       });
       browserStackTunnel.start(function (error) {
         if (error) {
