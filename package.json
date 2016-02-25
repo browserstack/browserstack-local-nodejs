@@ -15,16 +15,12 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
-    "npmlog": "2.0.2",
-    "os-homedir": "^1.0.1",
-    "tail": "^0.4.0",
+    "is-running": "^2.0.0",
     "unzip": "0.1.11"
   },
   "devDependencies": {
     "eslint": "1.10.3",
     "expect.js": "0.3.1",
-    "mocha": "2.4.5",
-    "mocks": "0.0.15",
-    "sinon": "1.17.3"
+    "mocha": "2.4.5"
   }
 }

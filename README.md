@@ -10,7 +10,7 @@ npm install browserstack
 
 ### Constructor
 
-* `new BrowserStack::Local`: creates an instance of Local
+* `new browserstack.Local()`: creates an instance of Local
 
 ### Methods
 
@@ -36,7 +36,7 @@ The first and only argument to any callback function will be an error object.
 * `localIdentifier`: If doing simultaneous multiple local testing connections, set this uniquely for different processes
 * `hosts`: List of hosts and ports where Local must be enabled for eg. localhost,3000,1,localhost,3001,0
 * `logfile`: Path to file where Local logs be saved to
-* `binaryPath`: Optional path to Local binary
+* `binarypath`: Optional path to Local binary
 
 
 ## Tests

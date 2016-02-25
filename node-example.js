@@ -1,4 +1,4 @@
-var browserstack = require('browserstack');
+var browserstack = require('./index');
 
 var local = new browserstack.Local();
 var webdriver = require('selenium-webdriver');
@@ -8,8 +8,8 @@ var capabilities = {
   build: 'build',
   'browserName': 'chrome',
   'os': 'OS X',
-  'browserstack.local': true,
-  'browserstack.localIdentifier': identifier
+  'browserstack.local': true
+  //'browserstack.localIdentifier': identifier
 }
 
 var options = {
@@ -20,42 +20,46 @@ var options = {
   //  sslFlag: 0
   //}],
   //f: __dirname,
-  binaryPath: '/var/BrowserStackLocal',
-  logfile: '/var/log/local.log',
-  localIdentifier: identifier,
-  verbose: true,
+  //binaryPath: '/var/BrowserStackLocal',
+  //logfile: '/var/log/local.log',
+  //localIdentifier: identifier,
+  //verbose: true,
   //proxyUser: '',
   //proxyPass: '',
   //proxyPort: 80,
   //proxyHost: 'host',
-  force: true,
-  forcelocal: true,
-  onlyAutomate: true
+  //force: true,
+  //forcelocal: true,
+  //onlyAutomate: true
 };
 
-local.start(options, function(error) {
-  if(error) {
-    console.log("Got Error From Local " + error);
-    process.exit();
-  }
-  console.log('Is Running ' + local.isRunning());
-  console.log('Started');
-
-  capabilities['browserstack.user'] = process.env.BROWSERSTACK_USERNAME;
-  capabilities['browserstack.key'] = process.env.BROWSERSTACK_ACCESS_KEY;
-  capabilities['browserstack.local'] = true;
-  capabilities['browserstack.localIdentifier'] = identifier;
-
-  driver = new webdriver.Builder().usingServer('http://hub.browserstack.com/wd/hub').withCapabilities(capabilities).build();
-  console.log('Is Running ' + local.isRunning());
-  driver.get("http://localhost:3000").then(function() {
+// try {
+  local.start(options, function() {
     console.log('Is Running ' + local.isRunning());
-    driver.quit().then(function() {
+    console.log('Started');
+
+    capabilities['browserstack.user'] = process.env.BROWSERSTACK_USERNAME;
+    capabilities['browserstack.key'] = process.env.BROWSERSTACK_ACCESS_KEY;
+    capabilities['browserstack.local'] = true;
+    //capabilities['browserstack.localIdentifier'] = identifier;
+
+    driver = new webdriver.Builder().usingServer('http://hub.browserstack.com/wd/hub').withCapabilities(capabilities).build();
+    console.log('Is Running ' + local.isRunning());
+    driver.get("http://www.google.com").then(function() {
       console.log('Is Running ' + local.isRunning());
-      local.stop(function() {
+      driver.quit().then(function() {
         console.log('Is Running ' + local.isRunning());
-        console.log('Stopped');
+        local.stop(function() {
+          console.log('Is Running ' + local.isRunning());
+          console.log('Stopped');
+        });
       });
     });
   });
-});
+// }
+// catch(error){
+//   console.log("Got Error From Local " + error);
+//   process.exit();
+// }
+
+
