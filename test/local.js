@@ -9,7 +9,7 @@ describe('Local', function () {
   });
 
   it('should have pid when running', function (done) {
-    this.timeout(15000);
+    this.timeout(600000);
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       expect(bsLocal.tunnel.pid).to.not.equal(0);
       done();
@@ -17,7 +17,7 @@ describe('Local', function () {
   });
 
   it('should return is running properly', function (done) {
-    this.timeout(15000);
+    this.timeout(60000);
     expect(bsLocal.isRunning()).to.not.equal(true);
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       expect(bsLocal.isRunning()).to.equal(true);
@@ -26,7 +26,7 @@ describe('Local', function () {
   });
 
   it('should throw error on running multiple binary', function (done) {
-    this.timeout(25000);
+    this.timeout(60000);
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       bsLocal_2 = new browserstack.Local();
       try{
