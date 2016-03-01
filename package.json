@@ -15,8 +15,7 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
-    "is-running": "^2.0.0",
-    "unzip": "0.1.11"
+    "is-running": "^2.0.0"
   },
   "devDependencies": {
     "eslint": "1.10.3",
