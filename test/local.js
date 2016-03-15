@@ -114,6 +114,7 @@ describe('Local', function () {
   });
 
   afterEach(function (done) {
+    this.timeout(60000);
     bsLocal.stop(done);
   });
 
