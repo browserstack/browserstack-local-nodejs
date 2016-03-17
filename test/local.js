@@ -30,7 +30,7 @@ describe('Local', function () {
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       bsLocal_2 = new browserstack.Local();
       try{
-        bsLocal_2.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){});  
+        bsLocal_2.start({ key: process.env.BROWSERSTACK_ACCESS_KEY, logfile: "C:\\Users\\Admin\\Desktop\\local.log" }, function(){});
       }
       catch(err){
         expect(err.toString().trim()).to.equal('LocalError: *** Error: Either another browserstack local client is running on your machine or some server is listening on port 45691');

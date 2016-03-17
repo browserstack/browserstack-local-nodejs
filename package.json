@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "pretest": "./node_modules/.bin/eslint lib/* index.js",
-    "test": "NODE_ENV=testing ./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/mocha"
   },
   "keywords": [
     "BrowserStack",
