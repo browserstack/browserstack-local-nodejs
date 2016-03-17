@@ -1,5 +1,7 @@
 var expect = require('expect.js'),
     mocks = require('mocks'),
+    path = require('path'),
+    fs = require('fs'),
     browserstack = require('../index');
 
 describe('Local', function () {
@@ -29,11 +31,13 @@ describe('Local', function () {
     this.timeout(60000);
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       bsLocal_2 = new browserstack.Local();
+      var tempLogPath = path.join(process.cwd(), 'log2.log');
       try{
-        bsLocal_2.start({ key: process.env.BROWSERSTACK_ACCESS_KEY, logfile: "C:\\Users\\Admin\\Desktop\\local.log" }, function(){});
+        bsLocal_2.start({ key: process.env.BROWSERSTACK_ACCESS_KEY, logfile: tempLogPath }, function(){});
       }
       catch(err){
         expect(err.toString().trim()).to.equal('LocalError: *** Error: Either another browserstack local client is running on your machine or some server is listening on port 45691');
+        fs.unlinkSync(tempLogPath);
         done();
       }
     });
