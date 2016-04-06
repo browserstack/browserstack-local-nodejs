@@ -86,6 +86,14 @@ describe('Local', function () {
     });
   });
 
+  it('should enable forceproxy', function (done) {
+    bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, forceproxy: true }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('-forceproxy')).to.not.equal(-1);
+      done();
+    });
+  });
+
+
   it('should set localIdentifier', function (done) {
     bsLocal.start({ key: process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, localIdentifier: 'abcdef' }, function(){
       expect(bsLocal.getBinaryArgs().indexOf('-localIdentifier abcdef')).to.not.equal(-1);
