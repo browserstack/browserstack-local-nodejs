@@ -13,24 +13,14 @@ var capabilities = {
 }
 
 var options = {
-  key: process.env.BROWSERSTACK_ACCESS_KEY,
+  '-key': process.env.BROWSERSTACK_ACCESS_KEY,
   //hosts: [{
   //  name: 'localhost',
   //  port: 8080,
   //  sslFlag: 0
   //}],
-  //f: __dirname,
-  //binaryPath: '/var/BrowserStackLocal',
-  //logfile: '/var/log/local.log',
-  //localIdentifier: identifier,
-  //verbose: true,
-  //proxyUser: '',
-  //proxyPass: '',
-  //proxyPort: 80,
-  //proxyHost: 'host',
-  //force: true,
-  //forcelocal: true,
-  //onlyAutomate: true
+  //'-f': __dirname,
+  //'-binaryPath': '/var/BrowserStackLocal'
 };
 
 // try {
