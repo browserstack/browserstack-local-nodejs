@@ -19,7 +19,7 @@ var browserstack = require('browserstack-local');
 var bs_local = new browserstack.Local();
 
 # replace <browserstack-accesskey> with your key. You can also set an environment variable - "BROWSERSTACK_ACCESS_KEY".
-var bs_local_args = { '-key': '<browserstack-accesskey>' };
+var bs_local_args = { 'key': '<browserstack-accesskey>' };
 
 # starts the Local instance with the required arguments
 bs_local.start(bs_local_args, function() {
@@ -43,7 +43,7 @@ Apart from the key, all other BrowserStack Local modifiers are optional. For the
 #### Verbose Logging
 To enable verbose logging -
 ```
-bs_local_args = { '-key': '<browserstack-accesskey>', 'v': 'true' }
+bs_local_args = { 'key': '<browserstack-accesskey>', 'v': 'true' }
 ```
 
 #### Folder Testing
