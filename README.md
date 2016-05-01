@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/browserstack/browserstack-local-nodejs.svg?branch=master)](https://travis-ci.org/browserstack/browserstack-local-nodejs)
 
-A simple Nodejs wrapper for BrowserStack Local Binary.
+Nodejs bindings for BrowserStack Local.
 
 ## Installation
 
@@ -126,3 +126,4 @@ We love pull requests! We are very happy to work with you to get your changes me
 * Adhere to the coding conventions you see in the surrounding code.
 * Include tests, and make sure all tests pass.
 * Before submitting a pull-request, clean up the git history by going over your commits and squashing together minor changes and fixes into the corresponding commits. You can do this using the interactive rebase command.
+
