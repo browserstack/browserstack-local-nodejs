@@ -1,7 +1,8 @@
 {
-  "name": "browserstack",
+  "name": "browserstack-local",
   "version": "0.1.0",
-  "description": "Node client to run selenium tests on BrowserStack",
+  "description": "Nodejs bindings for BrowserStack Local",
+  "engine": "^0.10.44",
   "main": "index.js",
   "scripts": {
     "pretest": "./node_modules/.bin/eslint lib/* index.js",
@@ -9,6 +10,7 @@
   },
   "keywords": [
     "BrowserStack",
+    "Local",
     "selenium",
     "testing"
   ],
@@ -24,3 +26,4 @@
     "mocks": "0.0.15"
   }
 }
+
