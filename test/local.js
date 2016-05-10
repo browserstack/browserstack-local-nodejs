@@ -29,17 +29,15 @@ describe('Local', function () {
 
   it('should throw error on running multiple binary', function (done) {
     this.timeout(60000);
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(){
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(error){
       bsLocal_2 = new browserstack.Local();
       var tempLogPath = path.join(process.cwd(), 'log2.log');
-      try{
-        bsLocal_2.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, 'logfile': tempLogPath }, function(){});
-      }
-      catch(err){
-        expect(err.toString().trim()).to.equal('LocalError: *** Error: Either another browserstack local client is running on your machine or some server is listening on port 45691');
+
+      bsLocal_2.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, 'logfile': tempLogPath }, function(error){
+        expect(error.toString().trim()).to.equal('LocalError: Either another browserstack local client is running on your machine or some server is listening on port 45691');
         fs.unlinkSync(tempLogPath);
         done();
-      }
+      });
     });
   });
 
