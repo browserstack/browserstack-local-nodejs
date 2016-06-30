@@ -24,6 +24,12 @@
     "expect.js": "0.3.1",
     "mocha": "2.4.5",
     "mocks": "0.0.15"
+  },
+  "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",
+  "homepage": "https://github.com/browserstack/browserstack-local-nodejs",
+  "repository": { 
+    "type" : "git", 
+    "url" : "https://github.com/browserstack/browserstack-local-nodejs.git"
   }
 }
 
