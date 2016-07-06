@@ -112,7 +112,8 @@ describe('Local', function () {
 
   it('should set localIdentifier', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'localIdentifier': 'abcdef' }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-localIdentifier abcdef')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('-localIdentifier')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('abcdef')).to.not.equal(-1);
       done();
     });
   });
@@ -126,10 +127,14 @@ describe('Local', function () {
       'proxyUser': 'user',
       'proxyPass': 'pass'
     }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyHost localhost')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyPort 8080')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyUser user')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyPass pass')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('-proxyHost')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('localhost')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('-proxyPort')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf(8080)).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('-proxyUser')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('user')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('-proxyPass')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('pass')).to.not.equal(-1);
       done();
     });
   });
