@@ -17,6 +17,7 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
+    "https-proxy-agent": "^1.0.0",
     "is-running": "^2.0.0"
   },
   "devDependencies": {
