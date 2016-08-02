@@ -2,6 +2,7 @@ var expect = require('expect.js'),
     mocks = require('mocks'),
     path = require('path'),
     fs = require('fs'),
+    rimraf = require('rimraf'),
     Proxy = require('proxy'),
     browserstack = require('../index'),
     LocalBinary = require('../lib/LocalBinary');
@@ -181,7 +182,7 @@ describe('LocalBinary', function () {
   });
 
   afterEach(function () {
-    fs.rmdirSync(tempDownloadPath);
+    rimraf.sync(tempDownloadPath);
   });
 
   it('should download binaries without proxy', function (done) {
@@ -189,7 +190,6 @@ describe('LocalBinary', function () {
     var conf = {};
     binary.download(conf, tempDownloadPath, function (result) {
       expect(fs.existsSync(result)).to.equal(true);
-      fs.unlinkSync(result);
       done();
     });
   });
@@ -203,7 +203,6 @@ describe('LocalBinary', function () {
     binary.download(conf, tempDownloadPath, function (result) {
       // test for file existence
       expect(fs.existsSync(result)).to.equal(true);
-      fs.unlinkSync(result);
       done();
     });
   });
