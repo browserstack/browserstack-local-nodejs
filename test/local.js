@@ -2,7 +2,9 @@ var expect = require('expect.js'),
     mocks = require('mocks'),
     path = require('path'),
     fs = require('fs'),
-    browserstack = require('../index');
+    Proxy = require('proxy'),
+    browserstack = require('../index'),
+    LocalBinary = require('../lib/LocalBinary');
 
 describe('Local', function () {
   var bsLocal;
@@ -151,4 +153,58 @@ describe('Local', function () {
     bsLocal.stop(done);
   });
 
+});
+
+describe('LocalBinary', function () {
+  var proxy;
+  var proxyPort;
+  var binary;
+  var tempDownloadPath;
+
+  before(function (done) {
+    // setup HTTP proxy server
+    proxy = new Proxy();
+    proxy.listen(function () {
+      proxyPort = proxy.address().port;
+      done();
+    });
+  });
+
+  after(function (done) {
+    proxy.once('close', function () { done(); });
+    proxy.close();
+  });
+
+  beforeEach(function () {
+    binary = new LocalBinary();
+    tempDownloadPath = path.join(process.cwd(), 'download');
+  });
+
+  afterEach(function () {
+    fs.rmdirSync(tempDownloadPath);
+  });
+
+  it('should download binaries without proxy', function (done) {
+    this.timeout(600000);
+    var conf = {};
+    binary.download(conf, tempDownloadPath, function (result) {
+      expect(fs.existsSync(result)).to.equal(true);
+      fs.unlinkSync(result);
+      done();
+    });
+  });
+
+  it('should download binaries with proxy', function (done) {
+    this.timeout(600000);
+    var conf = {
+      proxyHost: '127.0.0.1',
+      proxyPort: proxyPort
+    };
+    binary.download(conf, tempDownloadPath, function (result) {
+      // test for file existence
+      expect(fs.existsSync(result)).to.equal(true);
+      fs.unlinkSync(result);
+      done();
+    });
+  });
 });
