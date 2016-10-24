@@ -18,7 +18,9 @@
   "license": "MIT",
   "dependencies": {
     "https-proxy-agent": "^1.0.0",
-    "is-running": "^2.0.0"
+    "is-running": "^2.0.0",
+    "sinon": "^1.17.6",
+    "temp-fs": "^0.9.9"
   },
   "devDependencies": {
     "eslint": "1.10.3",
