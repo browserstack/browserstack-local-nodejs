@@ -1,11 +1,16 @@
 var expect = require('expect.js'),
+    sinon = require('sinon'),
     mocks = require('mocks'),
     path = require('path'),
     fs = require('fs'),
     rimraf = require('rimraf'),
     Proxy = require('proxy'),
+    tempfs = require('temp-fs'),
     browserstack = require('../index'),
     LocalBinary = require('../lib/LocalBinary');
+
+
+const MAX_TIMEOUT = 600000;
 
 describe('Local', function () {
   var bsLocal;
@@ -157,53 +162,138 @@ describe('Local', function () {
 });
 
 describe('LocalBinary', function () {
-  var proxy;
-  var proxyPort;
-  var binary;
-  var tempDownloadPath;
+  describe('Retries', function() {
+    var unlinkTmp,
+      defaultBinaryPath,
+      validBinaryPath,
+      sandBox;
 
-  before(function (done) {
-    // setup HTTP proxy server
-    proxy = new Proxy();
-    proxy.listen(function () {
-      proxyPort = proxy.address().port;
+    before(function(done) {
+      this.timeout(MAX_TIMEOUT);
+      // ensure that we have a valid binary downloaded
+
+      // removeIfInvalid();
+      (new LocalBinary()).binaryPath({}, function(binaryPath) {
+        defaultBinaryPath = binaryPath;
+        tempfs.mkdir({
+          recursive: true
+        }, function(err, dir) {
+          if(err) { throw err; }
+
+          validBinaryPath = path.join(dir.path, path.basename(binaryPath));
+          fs.rename(defaultBinaryPath, validBinaryPath, function(err) {
+            if(err) { throw err; }
+
+            unlinkTmp = dir.unlink;
+            done();
+          });
+        });
+      });
+    });
+
+    beforeEach(function() {
+      sandBox = sinon.sandbox.create();
+    });
+
+    it('Tries to download binary if its corrupted', function(done) {
+      fs.unlink(defaultBinaryPath, function() {
+        var localBinary = new LocalBinary();
+        var downloadStub = sandBox.stub(localBinary, 'download', function() {
+          downloadStub.callArgWith(2, [ defaultBinaryPath ]);
+          expect(downloadStub.args[0][3]).to.be(5);
+        });
+
+        fs.writeFile(defaultBinaryPath, 'Random String', function() {
+          fs.chmod(defaultBinaryPath, '0755', function() {
+            localBinary.binaryPath({
+            }, function(binaryPath) {
+              expect(downloadStub.called).to.be.true;
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('Tries to download binary if its not present', function(done) {
+      fs.unlink(defaultBinaryPath, function() {
+        var localBinary = new LocalBinary();
+        var downloadStub = sandBox.stub(localBinary, 'download', function() {
+          downloadStub.callArgWith(2, [ defaultBinaryPath ]);
+          expect(downloadStub.args[0][3]).to.be(5);
+        });
+
+        localBinary.binaryPath({
+        }, function(binaryPath) {
+          expect(downloadStub.called).to.be.true;
+          done();
+        });
+      });
+    });
+
+    afterEach(function(done) {
+      sandBox.restore();
       done();
+    });
+
+    after(function(done) {
+      fs.rename(validBinaryPath, defaultBinaryPath, function(err) {
+        if(err) { throw err; }
+
+        unlinkTmp(done);
+      });
     });
   });
 
-  after(function (done) {
-    proxy.once('close', function () { done(); });
-    proxy.close();
-  });
+  describe('Download', function() {
+    var proxy;
+    var proxyPort;
+    var binary;
+    var tempDownloadPath;
 
-  beforeEach(function () {
-    binary = new LocalBinary();
-    tempDownloadPath = path.join(process.cwd(), 'download');
-  });
-
-  afterEach(function () {
-    rimraf.sync(tempDownloadPath);
-  });
-
-  it('should download binaries without proxy', function (done) {
-    this.timeout(600000);
-    var conf = {};
-    binary.download(conf, tempDownloadPath, function (result) {
-      expect(fs.existsSync(result)).to.equal(true);
-      done();
+    before(function (done) {
+      // setup HTTP proxy server
+      proxy = new Proxy();
+      proxy.listen(function () {
+        proxyPort = proxy.address().port;
+        done();
+      });
     });
-  });
 
-  it('should download binaries with proxy', function (done) {
-    this.timeout(600000);
-    var conf = {
-      proxyHost: '127.0.0.1',
-      proxyPort: proxyPort
-    };
-    binary.download(conf, tempDownloadPath, function (result) {
-      // test for file existence
-      expect(fs.existsSync(result)).to.equal(true);
-      done();
+    after(function (done) {
+      proxy.once('close', function () { done(); });
+      proxy.close();
+    });
+
+    beforeEach(function () {
+      binary = new LocalBinary();
+      tempDownloadPath = path.join(process.cwd(), 'download');
+    });
+
+    afterEach(function () {
+      rimraf.sync(tempDownloadPath);
+    });
+
+    it('should download binaries without proxy', function (done) {
+      this.timeout(MAX_TIMEOUT);
+      var conf = {};
+      binary.download(conf, tempDownloadPath, function (result) {
+        expect(fs.existsSync(result)).to.equal(true);
+        done();
+      });
+    });
+
+    it('should download binaries with proxy', function (done) {
+      this.timeout(MAX_TIMEOUT);
+      var conf = {
+        proxyHost: '127.0.0.1',
+        proxyPort: proxyPort
+      };
+      binary.download(conf, tempDownloadPath, function (result) {
+        // test for file existence
+        expect(fs.existsSync(result)).to.equal(true);
+        done();
+      });
     });
   });
 });
