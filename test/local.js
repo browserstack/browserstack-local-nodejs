@@ -179,7 +179,7 @@ describe('Local', function () {
   });
 
   it('should set hosts', function (done) {
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: 'localhost,8000,0'}, function(){
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'only': 'localhost,8000,0'}, function(){
       expect(bsLocal.getBinaryArgs().indexOf('--only')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('localhost,8000,0')).to.not.equal(-1);
       done();
