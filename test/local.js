@@ -50,8 +50,17 @@ describe('Local', function () {
   });
 
   it('should enable verbose', function (done) {
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'v': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-vvv')).to.not.equal(-1);
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'verbose': true }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('--verbose')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('1')).to.not.equal(-1);
+      done();
+    });
+  });
+
+  it('should enable verbose with log level', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'verbose': 2 }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('--verbose')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('2')).to.not.equal(-1);
       done();
     });
   });
@@ -64,47 +73,62 @@ describe('Local', function () {
     });
   });
 
+  it('should set folder testing with folder option', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'folder': '/var/html' }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('-f')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('/var/html')).to.not.equal(-1);
+      done();
+    });
+  });
+
   it('should enable force', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'force': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-force')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--force')).to.not.equal(-1);
       done();
     });
   });
 
   it('should enable only', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'only': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-only')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--only')).to.not.equal(-1);
       done();
     });
   });
 
   it('should enable onlyAutomate', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'onlyAutomate': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-onlyAutomate')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--only-automate')).to.not.equal(-1);
       done();
     });
   });
 
   it('should enable forcelocal', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'forcelocal': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-forcelocal')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--force-local')).to.not.equal(-1);
+      done();
+    });
+  });
+
+  it('should enable forcelocal with camel case', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'forceLocal': true }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('--force-local')).to.not.equal(-1);
       done();
     });
   });
 
   it('should enable custom boolean args', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'boolArg1': true, 'boolArg2': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-boolArg1')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-boolArg2')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--boolArg1')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--boolArg2')).to.not.equal(-1);
       done();
     });
   });
 
   it('should enable custom keyval args', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'customKey1': 'custom value1', 'customKey2': 'custom value2' }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-customKey1')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--customKey1')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('custom value1')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-customKey2')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--customKey2')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('custom value2')).to.not.equal(-1);
       done();
     });
@@ -112,7 +136,14 @@ describe('Local', function () {
 
   it('should enable forceproxy', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'forceproxy': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-forceproxy')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--force-proxy')).to.not.equal(-1);
+      done();
+    });
+  });
+
+  it('should enable forceproxy with camel case', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'forceProxy': true }, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('--force-proxy')).to.not.equal(-1);
       done();
     });
   });
@@ -120,7 +151,7 @@ describe('Local', function () {
 
   it('should set localIdentifier', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'localIdentifier': 'abcdef' }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-localIdentifier')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--local-identifier')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('abcdef')).to.not.equal(-1);
       done();
     });
@@ -135,20 +166,21 @@ describe('Local', function () {
       'proxyUser': 'user',
       'proxyPass': 'pass'
     }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyHost')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--proxy-host')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('localhost')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyPort')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--proxy-port')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf(8080)).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyUser')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--proxy-user')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('user')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('-proxyPass')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--proxy-pass')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('pass')).to.not.equal(-1);
       done();
     });
   });
 
   it('should set hosts', function (done) {
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'hosts': 'localhost,8000,0' }, function(){
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: 'localhost,8000,0'}, function(){
+      expect(bsLocal.getBinaryArgs().indexOf('--only')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('localhost,8000,0')).to.not.equal(-1);
       done();
     });

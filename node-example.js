@@ -13,7 +13,7 @@ var capabilities = {
 }
 
 var options = {
-  '-key': process.env.BROWSERSTACK_ACCESS_KEY,
+  'key': process.env.BROWSERSTACK_ACCESS_KEY,
   //hosts: [{
   //  name: 'localhost',
   //  port: 8080,
