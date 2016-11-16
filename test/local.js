@@ -167,7 +167,7 @@ describe('Local', function () {
 
   it('should set parallelRuns', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'parallelRuns': '10' }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-parallel-runs')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--parallel-runs')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('10')).to.not.equal(-1);
       done();
     });
@@ -175,7 +175,7 @@ describe('Local', function () {
 
   it('should set parallelRuns with integer value', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'parallelRuns': 10 }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('-parallel-runs')).to.not.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--parallel-runs')).to.not.equal(-1);
       expect(bsLocal.getBinaryArgs().indexOf('10')).to.not.equal(-1);
       done();
     });
