@@ -90,6 +90,13 @@ bs_local_args = { 'key': '<browserstack-accesskey>', 'localIdentifier': 'randoms
 
 ## Additional Arguments
 
+#### Binary Path
+ 
+ By default, BrowserStack local wrappers try downloading and executing the latest version of BrowserStack binary in ~/.browserstack or the present working directory or the tmp folder by order. But you can override these by passing the -binarypath argument.
+ Path to specify local Binary path -
+ ```node
+ bs_local_args = { 'key': '<browserstack-accesskey>', 'binarypath': '/browserstack/BrowserStackLocal' }
+ ```
 
 #### Logfile
 To save the logs to the file while running with the '-v' argument, you can specify the path of the file. By default the logs are saved in the local.log file in the present woring directory.
