@@ -211,6 +211,7 @@ describe('Local', function () {
   })
 
   it('does not error if no callback in stop', function (done) {
+    this.timeout(60000);
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(){
       bsLocal.stop();
       done();
