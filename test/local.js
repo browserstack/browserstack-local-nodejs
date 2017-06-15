@@ -182,9 +182,9 @@ describe('Local', function () {
   });
 
   it('should set proxy', function (done) {
-    bsLocal.start({
-      'key': process.env.BROWSERSTACK_ACCESS_KEY,
-      onlyCommand: true,
+    bsLocal.start({ 
+      'key': process.env.BROWSERSTACK_ACCESS_KEY, 
+      onlyCommand: true, 
       'proxyHost': 'localhost',
       'proxyPort': 8080,
       'proxyUser': 'user',
@@ -208,15 +208,7 @@ describe('Local', function () {
       expect(bsLocal.getBinaryArgs().indexOf('localhost,8000,0')).to.not.equal(-1);
       done();
     });
-  })
-
-  it('does not error if no callback in stop', function (done) {
-    this.timeout(60000);
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(){
-      bsLocal.stop();
-      done();
-    });
-  })
+  });
 
   afterEach(function (done) {
     this.timeout(60000);
