@@ -4,6 +4,7 @@
   "description": "Nodejs bindings for BrowserStack Local",
   "engine": "^0.10.44",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "pretest": "./node_modules/.bin/eslint lib/* index.js",
     "test": "./node_modules/.bin/mocha"
