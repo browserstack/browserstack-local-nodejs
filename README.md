@@ -12,7 +12,7 @@ npm install browserstack-local
 
 ## Example
 
-```node
+```js
 var browserstack = require('browserstack-local');
 
 //creates an instance of Local
@@ -42,31 +42,31 @@ Apart from the key, all other BrowserStack Local modifiers are optional. For the
 
 #### Verbose Logging
 To enable verbose logging -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'verbose': 'true' }
 ```
 
 #### Folder Testing
 To test local folder rather internal server, provide path to folder as value of this option -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'f': '/my/awesome/folder' }
 ```
 
 #### Force Start
 To kill other running Browserstack Local instances -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'force': 'true' }
 ```
 
 #### Only Automate
 To disable local testing for Live and Screenshots, and enable only Automate -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'onlyAutomate': 'true' }
 ```
 
 #### Force Local
 To route all traffic via local(your) machine -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'forceLocal': 'true' }
 ```
 
@@ -78,13 +78,13 @@ To use a proxy for local testing -
 * proxyUser: Username for connecting to proxy (Basic Auth Only)
 * proxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
 
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password' }
 ```
 
 #### Local Identifier
 If doing simultaneous multiple local testing connections, set this uniquely for different processes -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'localIdentifier': 'randomstring' }
 ```
 
@@ -94,14 +94,14 @@ bs_local_args = { 'key': '<browserstack-accesskey>', 'localIdentifier': 'randoms
  
  By default, BrowserStack local wrappers try downloading and executing the latest version of BrowserStack binary in ~/.browserstack or the present working directory or the tmp folder by order. But you can override these by passing the -binarypath argument.
  Path to specify local Binary path -
- ```node
+ ```js
  bs_local_args = { 'key': '<browserstack-accesskey>', 'binarypath': '/browserstack/BrowserStackLocal' }
  ```
 
 #### Logfile
 To save the logs to the file while running with the '-v' argument, you can specify the path of the file. By default the logs are saved in the local.log file in the present woring directory.
 To specify the path to file where the logs will be saved -
-```node
+```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'verbose': 'true', 'logFile': '/browserstack/logs.txt' }
 ```
 
