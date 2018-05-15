@@ -17,7 +17,7 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
-    "https-proxy-agent": "^1.0.0",
+    "https-proxy-agent": "^2.2.1",
     "is-running": "^2.0.0",
     "sinon": "^1.17.6",
     "temp-fs": "^0.9.9"
@@ -32,9 +32,8 @@
   },
   "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",
   "homepage": "https://github.com/browserstack/browserstack-local-nodejs",
-  "repository": { 
-    "type" : "git", 
-    "url" : "https://github.com/browserstack/browserstack-local-nodejs.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/browserstack/browserstack-local-nodejs.git"
   }
 }
-
