@@ -210,6 +210,17 @@ describe('Local', function () {
     });
   });
 
+  it('should stop local', function (done) {
+    this.timeout(MAX_TIMEOUT);
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY}, function(){
+      expect(bsLocal.isRunning()).to.equal(true);
+      bsLocal.stop(function(){
+        expect(bsLocal.isRunning()).to.equal(false);
+        done();
+      });
+    });
+  });
+
   afterEach(function (done) {
     this.timeout(60000);
     bsLocal.stop(done);
