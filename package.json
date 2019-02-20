@@ -20,6 +20,7 @@
     "https-proxy-agent": "^2.2.1",
     "is-running": "^2.0.0",
     "ps-tree": "=1.1.1",
+    "selenium-webdriver": "^4.0.0-alpha.1",
     "sinon": "^1.17.6",
     "temp-fs": "^0.9.9"
   },
