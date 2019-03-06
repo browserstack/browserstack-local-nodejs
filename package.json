@@ -20,7 +20,6 @@
     "https-proxy-agent": "^2.2.1",
     "is-running": "^2.0.0",
     "ps-tree": "=1.1.1",
-    "sinon": "^1.17.6",
     "temp-fs": "^0.9.9"
   },
   "devDependencies": {
@@ -29,7 +28,8 @@
     "mocha": "2.4.5",
     "mocks": "0.0.15",
     "proxy": "^0.2.4",
-    "rimraf": "^2.5.4"
+    "rimraf": "^2.5.4",
+    "sinon": "^1.17.6"
   },
   "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",
   "homepage": "https://github.com/browserstack/browserstack-local-nodejs",
