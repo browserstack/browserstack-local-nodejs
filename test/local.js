@@ -182,9 +182,9 @@ describe('Local', function () {
   });
 
   it('should set proxy', function (done) {
-    bsLocal.start({ 
-      'key': process.env.BROWSERSTACK_ACCESS_KEY, 
-      onlyCommand: true, 
+    bsLocal.start({
+      'key': process.env.BROWSERSTACK_ACCESS_KEY,
+      onlyCommand: true,
       'proxyHost': 'localhost',
       'proxyPort': 8080,
       'proxyUser': 'user',
@@ -259,13 +259,13 @@ describe('LocalBinary', function () {
     });
 
     beforeEach(function() {
-      sandBox = sinon.sandbox.create();
+      sandBox = sinon.createSandbox();
     });
 
     it('Tries to download binary if its corrupted', function(done) {
       fs.unlink(defaultBinaryPath, function() {
         var localBinary = new LocalBinary();
-        var downloadStub = sandBox.stub(localBinary, 'download', function() {
+        var downloadStub = sandBox.stub(localBinary, 'download').callsFake(function() {
           downloadStub.callArgWith(2, [ defaultBinaryPath ]);
           expect(downloadStub.args[0][3]).to.be(5);
         });
@@ -285,7 +285,7 @@ describe('LocalBinary', function () {
     it('Tries to download binary if its not present', function(done) {
       fs.unlink(defaultBinaryPath, function() {
         var localBinary = new LocalBinary();
-        var downloadStub = sandBox.stub(localBinary, 'download', function() {
+        var downloadStub = sandBox.stub(localBinary, 'download').callsFake(function() {
           downloadStub.callArgWith(2, [ defaultBinaryPath ]);
           expect(downloadStub.args[0][3]).to.be(5);
         });
