@@ -34,9 +34,11 @@ bs_local.start(bs_local_args, function() {
 		   console.log("Stopped BrowserStackLocal");
 	        });	
  
-   }else{
-		// Error
-		console.log("BrowserStack Local didn't run properly");
+   }
+   else{
+   
+	// Error
+	console.log("BrowserStack Local didn't run properly");
    }
  
 
