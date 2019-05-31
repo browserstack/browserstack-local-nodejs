@@ -24,14 +24,22 @@ var bs_local_args = { 'key': '<browserstack-accesskey>' };
 // starts the Local instance with the required arguments
 bs_local.start(bs_local_args, function() {
   console.log("Started BrowserStackLocal");
-});
 
-// check if BrowserStack local instance is running
-console.log(bs_local.isRunning());
+  // check if running 
+  if(bs_local.isRunning()){
 
-// stop the Local instance
-bs_local.stop(function() {
-  console.log("Stopped BrowserStackLocal");
+	// run your test here	
+	yourTest().then(function(){
+		bs_local.stop(function(){ 
+		   console.log("Stopped BrowserStackLocal");
+	        });	
+ 
+   }else{
+		// Error
+		console.log("BrowserStack Local didn't run properly");
+   }
+ 
+
 });
 
 ```
