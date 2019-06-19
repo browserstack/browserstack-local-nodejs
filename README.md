@@ -28,7 +28,7 @@ bs_local.start(bs_local_args, function() {
   // check if running 
   if(bs_local.isRunning()){
 
-	// run your test here	
+	  // run your test here	
     yourTest().then(function(){
       bs_local.stop(function(){ 
         console.log("Stopped BrowserStackLocal");
