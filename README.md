@@ -29,16 +29,18 @@ bs_local.start(bs_local_args, function() {
   if(bs_local.isRunning()){
 
 	// run your test here	
-	yourTest().then(function(){
-		bs_local.stop(function(){ 
-		   console.log("Stopped BrowserStackLocal");
-	        });	
+    yourTest().then(function(){
+      bs_local.stop(function(){ 
+        console.log("Stopped BrowserStackLocal");
+      });	
+    });
  
-   }else{
-		// Error
-		console.log("BrowserStack Local didn't run properly");
-   }
- 
+  }else{
+
+    // Error
+    console.log("BrowserStack Local didn't run properly");
+
+  }
 
 });
 
