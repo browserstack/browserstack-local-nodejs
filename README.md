@@ -45,6 +45,7 @@ To enable verbose logging -
 ```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'verbose': 'true' }
 ```
+Note - Possible values for 'verbose' modifier are '1', '2', '3' and 'true'
 
 #### Folder Testing
 To test local folder rather internal server, provide path to folder as value of this option -
@@ -80,6 +81,27 @@ To use a proxy for local testing -
 
 ```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password' }
+```
+
+#### Local Proxy
+To use local proxy in local testing -
+
+* localProxyHost: Hostname/IP of proxy, remaining proxy options are ignored if this option is absent
+* localProxyPort: Port for the proxy, defaults to 8081 when -localProxyHost is used
+* localProxyUser: Username for connecting to proxy (Basic Auth Only)
+* localProxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
+
+```
+bs_local_args = { 'key': '<browserstack-accesskey>', 'localProxyHost': '127.0.0.1', 'localProxyPort': '8000', 'localProxyUser': 'user', 'localProxyPass': 'password' }
+```
+
+#### PAC (Proxy Auto-Configuration)
+To use PAC (Proxy Auto-Configuration) in local testing -
+
+* pac-file: PAC (Proxy Auto-Configuration) file’s absolute path
+
+```
+bs_local_args = { 'key': '<browserstack-accesskey>', 'pac-file': '<pac_file_abs_path>' }
 ```
 
 #### Local Identifier
