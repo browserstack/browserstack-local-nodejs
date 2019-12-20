@@ -1,6 +1,6 @@
 {
   "name": "browserstack-local",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Nodejs bindings for BrowserStack Local",
   "engine": "^0.10.44",
   "main": "index.js",
@@ -18,7 +18,7 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
-    "https-proxy-agent": "^2.2.1",
+    "https-proxy-agent": "^2.2.3",
     "is-running": "^2.0.0",
     "ps-tree": "=1.1.1",
     "temp-fs": "^0.9.9"
