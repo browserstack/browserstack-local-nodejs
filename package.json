@@ -1,6 +1,6 @@
 {
   "name": "browserstack-local",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Nodejs bindings for BrowserStack Local",
   "engine": "^0.10.44",
   "main": "index.js",
@@ -18,18 +18,18 @@
   "author": "BrowserStack",
   "license": "MIT",
   "dependencies": {
-    "https-proxy-agent": "^2.2.3",
-    "is-running": "^2.0.0",
-    "ps-tree": "=1.1.1",
+    "https-proxy-agent": "^4.0.0",
+    "is-running": "^2.1.0",
+    "ps-tree": "=1.2.0",
     "temp-fs": "^0.9.9"
   },
   "devDependencies": {
-    "eslint": "1.10.3",
+    "eslint": "6.8.0",
     "expect.js": "0.3.1",
-    "mocha": "2.4.5",
+    "mocha": "7.0.0",
     "mocks": "0.0.15",
-    "proxy": "^0.2.4",
-    "rimraf": "^2.5.4",
+    "proxy": "^1.0.1",
+    "rimraf": "^3.0.0",
     "sinon": "^1.17.6"
   },
   "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",
