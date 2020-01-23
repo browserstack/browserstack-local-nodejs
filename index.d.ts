@@ -19,8 +19,14 @@ declare module 'browserstack-local' {
     [key: string]: string | boolean
   }
 
+  class LocalError extends Error {
+    name: string;
+    message: string;
+    extra: string;
+  }
+
   class Local {
-    start(options: Partial<Options>, callback: () => void): void
+    start(options: Partial<Options>, callback: (error?: LocalError) => void): void
     isRunning(): boolean
     stop(callback: () => void): void
   }
