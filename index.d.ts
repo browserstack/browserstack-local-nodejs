@@ -20,7 +20,7 @@ declare module 'browserstack-local' {
   }
 
   class Local {
-    start(options: Partial<Options>, callback: () => void): void
+    start(options: Partial<Options>, callback: (error: Error | undefined) => void): void
     isRunning(): boolean
     stop(callback: () => void): void
   }
