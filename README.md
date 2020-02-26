@@ -80,7 +80,7 @@ To use a proxy for local testing -
 * proxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
 
 ```js
-bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password' }
+bs_local_args = { 'key': '<browserstack-accesskey>', 'local-proxy-host': '127.0.0.1', 'local-proxy-port': '8000', 'local-proxy-user': 'user', 'local-proxy-pass': 'password' }
 ```
 
 #### Local Proxy
@@ -92,7 +92,7 @@ To use local proxy in local testing -
 * localProxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
 
 ```
-bs_local_args = { 'key': '<browserstack-accesskey>', 'localProxyHost': '127.0.0.1', 'localProxyPort': '8000', 'localProxyUser': 'user', 'localProxyPass': 'password' }
+bs_local_args = { 'key': '<browserstack-accesskey>', 'local-proxy-host': '127.0.0.1', 'local-proxy-port': '8000', 'local-proxy-user': 'user', 'local-proxy-pass': 'password' }
 ```
 
 #### PAC (Proxy Auto-Configuration)
