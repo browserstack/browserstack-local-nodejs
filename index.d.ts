@@ -1,5 +1,5 @@
 declare module "browserstack-local" {
-  type VerboseLevels = boolean | '1' | '2' | '3'
+  type VerboseLevels = boolean | 'true' | 'false' | '1' | '2' | '3'
 
   interface Options {
     key: string;
