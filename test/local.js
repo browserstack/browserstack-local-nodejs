@@ -354,7 +354,7 @@ describe('LocalBinary', function () {
     it('should return download path of alpine linux binary', function() {
       sandBox.stub(localBinary, 'hostOS', 'linux');
       localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(true);
-      expect(localBinary.getDownloadPath()).to.equal('https://s3.amazonaws.com/bstack-local-prod/BrowserStackLocal-alpine');
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-alpine');
     });
 
     afterEach(function(done) {
