@@ -325,7 +325,7 @@ describe('LocalBinary', function () {
       var osNames = ['darwin', 'mac os'];
       osNames.forEach(function(os) {
         sandBox.stub(localBinary, 'hostOS', os);
-        expect(localBinary.getDownloadPath()).to.equal('https://s3.amazonaws.com/bstack-local-prod/BrowserStackLocal-darwin-x64');
+        expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-darwin-x64');
       });
     });
 
@@ -333,7 +333,7 @@ describe('LocalBinary', function () {
       var osNames = ['mswin', 'msys', 'mingw', 'cygwin', 'bccwin', 'wince', 'emc', 'win32'];
       osNames.forEach(function(os) {
         sandBox.stub(localBinary, 'hostOS', os);
-        expect(localBinary.getDownloadPath()).to.equal('https://s3.amazonaws.com/bstack-local-prod/BrowserStackLocal.exe');
+        expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal.exe');
       });
     });
 
@@ -341,14 +341,14 @@ describe('LocalBinary', function () {
       sandBox.stub(localBinary, 'hostOS', 'linux');
       sandBox.stub(localBinary, 'is64bits', true);
       localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
-      expect(localBinary.getDownloadPath()).to.equal('https://s3.amazonaws.com/bstack-local-prod/BrowserStackLocal-linux-x64');
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-linux-x64');
     });
 
     it('should return download path of linux 32 arch binary', function() {
       sandBox.stub(localBinary, 'hostOS', 'linux');
       sandBox.stub(localBinary, 'is64bits', false);
       localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
-      expect(localBinary.getDownloadPath()).to.equal('https://s3.amazonaws.com/bstack-local-prod/BrowserStackLocal-linux-ia32');
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-linux-ia32');
     });
 
     it('should return download path of alpine linux binary', function() {
