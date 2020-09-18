@@ -42,7 +42,7 @@ describe('Local', function () {
       var tempLogPath = path.join(process.cwd(), 'log2.log');
 
       bsLocal_2.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, 'logfile': tempLogPath }, function(error){
-        expect(error.toString().trim()).to.equal('LocalError: Either another browserstack local client is running on your machine or some server is listening on port 45691');
+        expect(error.toString().trim()).to.equal('LocalError: Either another browserstack local client is running on your machine or some server is listening on port 45690');
         fs.unlinkSync(tempLogPath);
         done();
       });
@@ -309,6 +309,58 @@ describe('LocalBinary', function () {
 
         unlinkTmp(done);
       });
+    });
+  });
+
+  describe('Download Path', function() {
+    var sandBox;
+    var localBinary;
+
+    beforeEach(function() {
+      sandBox = sinon.sandbox.create();
+      localBinary = new LocalBinary();
+    });
+
+    it('should return download path of darwin binary', function() {
+      var osNames = ['darwin', 'mac os'];
+      osNames.forEach(function(os) {
+        sandBox.stub(localBinary, 'hostOS', os);
+        expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-darwin-x64');
+      });
+    });
+
+    it('should return download path of exe binary', function() {
+      var osNames = ['mswin', 'msys', 'mingw', 'cygwin', 'bccwin', 'wince', 'emc', 'win32'];
+      osNames.forEach(function(os) {
+        sandBox.stub(localBinary, 'hostOS', os);
+        expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal.exe');
+      });
+    });
+
+    it('should return download path of linux 64 arch binary', function() {
+      sandBox.stub(localBinary, 'hostOS', 'linux');
+      sandBox.stub(localBinary, 'is64bits', true);
+      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-linux-x64');
+    });
+
+    it('should return download path of linux 32 arch binary', function() {
+      sandBox.stub(localBinary, 'hostOS', 'linux');
+      sandBox.stub(localBinary, 'is64bits', false);
+      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-linux-ia32');
+    });
+
+    it('should return download path of alpine linux binary', function() {
+      sandBox.stub(localBinary, 'hostOS', 'linux');
+      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(true);
+      sandBox.stub(localBinary, 'is64bits', true);
+      expect(localBinary.getDownloadPath()).to.equal('https://bstack-local-prod.s3.amazonaws.com/BrowserStackLocal-alpine');
+    });
+
+    afterEach(function(done) {
+      sandBox.restore();
+      done();
     });
   });
 
