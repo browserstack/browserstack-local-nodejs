@@ -225,8 +225,42 @@ describe('Local', function () {
     this.timeout(60000);
     bsLocal.stop(done);
   });
-
 });
+
+describe('Start sync', () => {
+  var bsLocal;
+  beforeEach(function () {
+    bsLocal = new browserstack.Local();
+  });
+
+  it('should have pid when running', function () {
+    this.timeout(60000);
+    bsLocal.startSync({ 'key': process.env.BROWSERSTACK_ACCESS_KEY});
+    expect(bsLocal.tunnel.pid).to.not.equal(0);
+  });
+
+  it('should return is running properly', function () {
+    this.timeout(60000);
+    expect(bsLocal.isRunning()).to.not.equal(true);
+    bsLocal.startSync({ 'key': process.env.BROWSERSTACK_ACCESS_KEY});
+    expect(bsLocal.isRunning()).to.equal(true);
+  });
+
+  it('should throw error on running multiple binary', function () {
+    this.timeout(60000);
+    bsLocal.startSync({ 'key': process.env.BROWSERSTACK_ACCESS_KEY });
+    bsLocal_2 = new browserstack.Local();
+    var tempLogPath = path.join(process.cwd(), 'log2.log');
+    const error = bsLocal_2.startSync({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, 'logfile': tempLogPath });
+    expect(error.toString().trim()).to.equal('LocalError: Either another browserstack local client is running on your machine or some server is listening on port 45690');
+    fs.unlinkSync(tempLogPath);
+  });
+
+  afterEach(function (done) {
+    this.timeout(60000);
+    bsLocal.stop(done);
+  });
+})
 
 describe('LocalBinary', function () {
   describe('Retries', function() {
@@ -413,6 +447,13 @@ describe('LocalBinary', function () {
         expect(fs.existsSync(result)).to.equal(true);
         done();
       });
+    });
+
+    it('should download binaries in sync', function () {
+      this.timeout(MAX_TIMEOUT);
+      var conf = {};
+      const result = binary.downloadSync(conf, tempDownloadPath);
+      expect(fs.existsSync(result)).to.equal(true);
     });
   });
 });
