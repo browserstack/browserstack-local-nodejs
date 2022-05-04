@@ -21,18 +21,39 @@ var bs_local = new browserstack.Local();
 // replace <browserstack-accesskey> with your key. You can also set an environment variable - "BROWSERSTACK_ACCESS_KEY".
 var bs_local_args = { 'key': '<browserstack-accesskey>' };
 
+
+function yourTest(callback) {
+
+  // your test goes here
+
+  callback()
+}
+
+
 // starts the Local instance with the required arguments
 bs_local.start(bs_local_args, function() {
   console.log("Started BrowserStackLocal");
+
+  // check if running 
+  if (bs_local.isRunning()) {
+
+	  // run your test here	
+    yourTest(function() {
+      bs_local.stop(function() { 
+        console.log("Stopped BrowserStackLocal");
+      });	
+    });
+ 
+  } else {
+
+    // Error
+    console.log("BrowserStack Local didn't run properly");
+
+  }
+
 });
 
-// check if BrowserStack local instance is running
-console.log(bs_local.isRunning());
 
-// stop the Local instance
-bs_local.stop(function() {
-  console.log("Stopped BrowserStackLocal");
-});
 
 ```
 
