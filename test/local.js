@@ -228,7 +228,7 @@ describe('Local', function () {
 });
 
 describe('Start sync', () => {
-  var bsLocal;
+  var bsLocal, bsLocal_2;
   beforeEach(function () {
     bsLocal = new browserstack.Local();
   });
@@ -258,7 +258,11 @@ describe('Start sync', () => {
 
   afterEach(function (done) {
     this.timeout(60000);
-    bsLocal.stop(done);
+    bsLocal.stop(() => {
+      if (bsLocal_2) {
+        bsLocal_2.stop(done);
+      }
+    });
   });
 })
 
