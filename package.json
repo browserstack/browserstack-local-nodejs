@@ -25,12 +25,13 @@
     "agent-base": "^6.0.2"
   },
   "devDependencies": {
-    "eslint": "6.8.0",
+    "eslint": "^7.0.0",
+    "eslint-plugin-mocha": "^10.1.0",
     "expect.js": "0.3.1",
-    "mocha": "7.0.0",
+    "mocha": "^10.0.0",
     "mocks": "0.0.15",
-    "proxy": "^1.0.1",
-    "rimraf": "^3.0.0",
+    "proxy": "^1.0.2",
+    "rimraf": "^3.0.2",
     "sinon": "^1.17.6"
   },
   "bugs": "https://github.com/browserstack/browserstack-local-nodejs/issues",

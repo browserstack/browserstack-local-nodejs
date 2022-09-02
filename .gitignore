@@ -1,5 +1,4 @@
 bin/
 node_modules/
-npm-debug.log
-local.log
 browserstack.err
+*.log

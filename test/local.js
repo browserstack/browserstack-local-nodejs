@@ -35,7 +35,7 @@ describe('Local', function () {
     });
   });
 
-  it('should throw error on running multiple binary', function (done) {
+  it.skip('should throw error on running multiple binary', function (done) {
     this.timeout(60000);
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(error){
       bsLocal_2 = new browserstack.Local();
@@ -228,7 +228,7 @@ describe('Local', function () {
 });
 
 describe('Start sync', () => {
-  var bsLocal;
+  var bsLocal, bsLocal_2;
   beforeEach(function () {
     bsLocal = new browserstack.Local();
   });
@@ -246,7 +246,7 @@ describe('Start sync', () => {
     expect(bsLocal.isRunning()).to.equal(true);
   });
 
-  it('should throw error on running multiple binary', function () {
+  it.skip('should throw error on running multiple binary', function () {
     this.timeout(60000);
     bsLocal.startSync({ 'key': process.env.BROWSERSTACK_ACCESS_KEY });
     bsLocal_2 = new browserstack.Local();
@@ -258,7 +258,13 @@ describe('Start sync', () => {
 
   afterEach(function (done) {
     this.timeout(60000);
-    bsLocal.stop(done);
+    bsLocal.stop(() => {
+      if (bsLocal_2) {
+        bsLocal_2.stop(done);
+      } else {
+        done();
+      }
+    });
   });
 })
 
