@@ -78,10 +78,10 @@ To use a proxy for local testing -
 * proxyPort: Port for the proxy, defaults to 3128 when -proxyHost is used
 * proxyUser: Username for connecting to proxy (Basic Auth Only)
 * proxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
-* caCert: Path to ca cert file, if required
+* useCaCertificate: Path to ca cert file, if required
 
 ```js
-bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password', 'caCert': '/Users/test/cert.pem' }
+bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password', 'useCaCertificate': '/Users/test/cert.pem' }
 ```
 
 #### Local Proxy
