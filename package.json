@@ -1,6 +1,6 @@
 {
   "name": "browserstack-local",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "description": "Nodejs bindings for BrowserStack Local",
   "engine": "^0.10.44",
   "main": "index.js",
