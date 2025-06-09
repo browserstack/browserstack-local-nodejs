@@ -280,7 +280,7 @@ describe('LocalBinary', function () {
       // ensure that we have a valid binary downloaded
 
       // removeIfInvalid();
-      (new LocalBinary()).binaryPath({}, 'abc', function(binaryPath) {
+      (new LocalBinary()).binaryPath({}, 'abc', 9, function(binaryPath) {
         defaultBinaryPath = binaryPath;
         tempfs.mkdir({
           recursive: true
@@ -313,7 +313,7 @@ describe('LocalBinary', function () {
         fs.writeFile(defaultBinaryPath, 'Random String', function() {
           fs.chmod(defaultBinaryPath, '0755', function() {
             localBinary.binaryPath({
-            }, 'abc', function(binaryPath) {
+            }, 'abc', 9, function(binaryPath) {
               expect(downloadStub.called).to.be.true;
               done();
             });
@@ -331,7 +331,7 @@ describe('LocalBinary', function () {
         });
 
         localBinary.binaryPath({
-        }, 'abc', function(binaryPath) {
+        }, 'abc', 9, function(binaryPath) {
           expect(downloadStub.called).to.be.true;
           done();
         });
