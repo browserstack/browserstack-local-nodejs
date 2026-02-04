@@ -3,9 +3,9 @@ var expect = require('expect.js'),
     mocks = require('mocks'),
     path = require('path'),
     fs = require('fs'),
+    os = require('os'),
     rimraf = require('rimraf'),
     Proxy = require('proxy'),
-    tempfs = require('temp-fs'),
     browserstack = require('../index'),
     LocalBinary = require('../lib/LocalBinary');
 
@@ -270,7 +270,7 @@ describe('Start sync', () => {
 
 describe('LocalBinary', function () {
   describe('Retries', function() {
-    var unlinkTmp,
+    var tempDir,
       defaultBinaryPath,
       validBinaryPath,
       sandBox;
@@ -282,18 +282,11 @@ describe('LocalBinary', function () {
       // removeIfInvalid();
       (new LocalBinary()).binaryPath({}, 'abc', 9, function(binaryPath) {
         defaultBinaryPath = binaryPath;
-        tempfs.mkdir({
-          recursive: true
-        }, function(err, dir) {
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'browserstack-test-'));
+        validBinaryPath = path.join(tempDir, path.basename(binaryPath));
+        fs.rename(defaultBinaryPath, validBinaryPath, function(err) {
           if(err) { throw err; }
-
-          validBinaryPath = path.join(dir.path, path.basename(binaryPath));
-          fs.rename(defaultBinaryPath, validBinaryPath, function(err) {
-            if(err) { throw err; }
-
-            unlinkTmp = dir.unlink;
-            done();
-          });
+          done();
         });
       });
     });
@@ -347,7 +340,7 @@ describe('LocalBinary', function () {
       fs.rename(validBinaryPath, defaultBinaryPath, function(err) {
         if(err) { throw err; }
 
-        unlinkTmp(done);
+        rimraf(tempDir, done);
       });
     });
   });
