@@ -21,7 +21,6 @@
     "https-proxy-agent": "^5.0.1",
     "is-running": "^2.1.0",
     "ps-tree": "=1.2.0",
-    "temp-fs": "^0.9.9",
     "agent-base": "^6.0.2"
   },
   "devDependencies": {
