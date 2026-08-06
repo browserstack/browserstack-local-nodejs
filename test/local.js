@@ -124,20 +124,80 @@ describe('Local', function () {
     });
   });
 
-  it('should enable custom boolean args', function (done) {
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'boolArg1': true, 'boolArg2': true }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('--boolArg1')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('--boolArg2')).to.not.equal(-1);
+  // LOC-6805 / LOC-6783 (F-007, CWE-88): addArgs used to prefix ANY unknown
+  // option key with '--' and push it onto the daemon argv, letting a caller
+  // — or upstream code merging untrusted input into `options` — inject
+  // arbitrary flags into the native binary. Only documented BrowserStackLocal
+  // modifiers may be forwarded now.
+
+  it('should reject unknown boolean args', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'boolArg1': true, 'boolArg2': true }, function(error){
+      expect(error).to.be.an(Error);
+      expect(error.toString()).to.contain('Unknown option \'boolArg1\'');
+      expect(bsLocal.getBinaryArgs().indexOf('--boolArg1')).to.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('--boolArg2')).to.equal(-1);
       done();
     });
   });
 
-  it('should enable custom keyval args', function (done) {
-    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'customKey1': 'custom value1', 'customKey2': 'custom value2' }, function(){
-      expect(bsLocal.getBinaryArgs().indexOf('--customKey1')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('custom value1')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('--customKey2')).to.not.equal(-1);
-      expect(bsLocal.getBinaryArgs().indexOf('custom value2')).to.not.equal(-1);
+  it('should reject unknown keyval args', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'customKey1': 'custom value1', 'customKey2': 'custom value2' }, function(error){
+      expect(error).to.be.an(Error);
+      expect(error.toString()).to.contain('Unknown option \'customKey1\'');
+      expect(bsLocal.getBinaryArgs().indexOf('--customKey1')).to.equal(-1);
+      expect(bsLocal.getBinaryArgs().indexOf('custom value1')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should reject the reported flag-injection payload', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'config': '/tmp/attacker.conf', 'daemon': 'stop' }, function(error){
+      expect(error).to.be.an(Error);
+      const args = bsLocal.getBinaryArgs();
+      expect(args.indexOf('--config')).to.equal(-1);
+      expect(args.indexOf('/tmp/attacker.conf')).to.equal(-1);
+      // the wrapper's own '--daemon start' must be the only daemon flag
+      expect(args.indexOf('stop')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should reject options the wrapper sets itself', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'log-file': '/tmp/attacker-owned' }, function(error){
+      expect(error).to.be.an(Error);
+      expect(error.toString()).to.contain('set by browserstack-local itself');
+      expect(bsLocal.getBinaryArgs().indexOf('/tmp/attacker-owned')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should reject a value that would be parsed as another flag', function (done) {
+    // bs-minimist does not consume a value beginning with '-'; it reads it as
+    // a separate flag, so a legitimate key can still smuggle one in.
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'region': '--pac-file' }, function(error){
+      expect(error).to.be.an(Error);
+      expect(error.toString()).to.contain('values starting with \'-\' are not allowed');
+      expect(bsLocal.getBinaryArgs().indexOf('--pac-file')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should not forward wrapper-internal keys to the binary', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true }, function(error){
+      expect(error).to.equal(undefined);
+      expect(bsLocal.getBinaryArgs().indexOf('--onlyCommand')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should still forward documented modifiers that have no explicit case', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'localProxyHost': '127.0.0.1', 'pac-file': '/tmp/proxy.pac' }, function(error){
+      expect(error).to.equal(undefined);
+      const args = bsLocal.getBinaryArgs();
+      expect(args.indexOf('--localProxyHost')).to.not.equal(-1);
+      expect(args.indexOf('127.0.0.1')).to.not.equal(-1);
+      expect(args.indexOf('--pac-file')).to.not.equal(-1);
+      expect(args.indexOf('/tmp/proxy.pac')).to.not.equal(-1);
       done();
     });
   });

@@ -40,6 +40,8 @@ bs_local.start(bs_local_args, function() {
 
 Apart from the key, all other BrowserStack Local modifiers are optional. For the full list of modifiers, refer [BrowserStack Local modifiers](https://www.browserstack.com/local-testing#modifiers). For examples, refer below -
 
+Only documented modifiers are forwarded to the binary. An unrecognised option key, an option the wrapper sets itself (`daemon`, `log-file`), or a value beginning with `-` is refused with an error rather than passed through to the `BrowserStackLocal` argv — otherwise any code that merges untrusted input into the options object could inject arbitrary flags into the binary.
+
 #### Verbose Logging
 To enable verbose logging -
 ```js
