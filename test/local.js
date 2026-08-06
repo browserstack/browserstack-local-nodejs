@@ -464,12 +464,12 @@ describe('LocalBinary', function () {
   });
 });
 
-// Regression tests for LOC-6804 (C-007): the binary-download fallback signalling
-// used to live on process.env, so (a) a value planted in process.env steered the
-// download to an arbitrary host with no validation, and (b) a failure on one Local
-// instance bled into every sibling instance in the same process. Both flip from
-// FAIL on the pre-fix code to PASS once the state is per-instance.
-describe('Binary download state isolation (LOC-6804)', function () {
+// Regression tests: the binary-download fallback signalling used to live on
+// process.env, so (a) a value planted in process.env steered the download to an
+// arbitrary host with no validation, and (b) a failure on one Local instance bled
+// into every sibling instance in the same process. Both flip from FAIL on the
+// pre-fix code to PASS once the state is per-instance.
+describe('Binary download state isolation', function () {
   var sandBox, childProcess;
   var Local = require('../lib/Local');
 
