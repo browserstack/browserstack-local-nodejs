@@ -124,11 +124,11 @@ describe('Local', function () {
     });
   });
 
-  // LOC-6805 / LOC-6783 (F-007, CWE-88): addArgs used to prefix ANY unknown
-  // option key with '--' and push it onto the daemon argv, letting a caller
-  // — or upstream code merging untrusted input into `options` — inject
-  // arbitrary flags into the native binary. Only documented BrowserStackLocal
-  // modifiers may be forwarded now.
+  // Argument injection (CWE-88): addArgs used to prefix ANY unknown option key
+  // with '--' and push it onto the daemon argv, letting a caller — or upstream
+  // code merging untrusted input into `options` — inject arbitrary flags into
+  // the native binary. Only documented BrowserStackLocal modifiers may be
+  // forwarded now, and no value may pose as a flag.
 
   it('should reject unknown boolean args', function (done) {
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'boolArg1': true, 'boolArg2': true }, function(error){
@@ -178,6 +178,62 @@ describe('Local', function () {
       expect(error).to.be.an(Error);
       expect(error.toString()).to.contain('values starting with \'-\' are not allowed');
       expect(bsLocal.getBinaryArgs().indexOf('--pac-file')).to.equal(-1);
+      done();
+    });
+  });
+
+  // The value check must cover keys that have an explicit case too, not just
+  // the ones reaching the allowlist. bs-minimist accepts '--flag=value', so a
+  // smuggled flag carries its own value and needs no following argv slot.
+  it('should reject a flag-like value on an explicitly handled option', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'localIdentifier': '--log-file=/tmp/attacker-owned' }, function(error){
+      expect(error).to.be.an(Error);
+      expect(error.toString()).to.contain('values starting with \'-\' are not allowed');
+      const args = bsLocal.getBinaryArgs();
+      expect(args.indexOf('--log-file=/tmp/attacker-owned')).to.equal(-1);
+      expect(args.indexOf('--local-identifier')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should reject a daemon-lifecycle smuggle through an explicitly handled option', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'only': '--daemon=stop' }, function(error){
+      expect(error).to.be.an(Error);
+      expect(bsLocal.getBinaryArgs().indexOf('--daemon=stop')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should reject a flag-like element inside a list-valued option', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'include-hosts': ['localhost', '--config-file=/tmp/attacker.yml'] }, function(error){
+      expect(error).to.be.an(Error);
+      expect(bsLocal.getBinaryArgs().indexOf('--config-file=/tmp/attacker.yml')).to.equal(-1);
+      done();
+    });
+  });
+
+  it('should forward a list-valued option as separate argv elements', function (done) {
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'include-hosts': ['localhost', '127.0.0.1'] }, function(error){
+      expect(error).to.equal(undefined);
+      const args = bsLocal.getBinaryArgs();
+      expect(args.indexOf('--include-hosts')).to.not.equal(-1);
+      expect(args.indexOf('localhost')).to.not.equal(-1);
+      expect(args.indexOf('127.0.0.1')).to.not.equal(-1);
+      done();
+    });
+  });
+
+  it('should skip a null or undefined passthrough value instead of pushing it raw', function (done) {
+    // execFile/spawnSync reject a non-string argv element, so a raw null here
+    // used to throw ERR_INVALID_ARG_TYPE out of start() instead of erroring.
+    bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY, onlyCommand: true, 'region': null, 'connect-timeout': 30 }, function(error){
+      expect(error).to.equal(undefined);
+      const args = bsLocal.getBinaryArgs();
+      expect(args.indexOf('--region')).to.equal(-1);
+      expect(args.indexOf(null)).to.equal(-1);
+      // numbers are coerced, so every argv element is a string
+      expect(args.indexOf('30')).to.not.equal(-1);
+      expect(args.every(function(a){ return typeof a === 'string'; })).to.equal(true);
       done();
     });
   });
