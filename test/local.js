@@ -12,6 +12,22 @@ var expect = require('expect.js'),
 
 const MAX_TIMEOUT = 600000;
 
+// Assertions that run inside asynchronous callbacks (e.g. the tree-kill
+// callback fired from Local.stop, or binary-download callbacks) execute
+// outside Mocha's synchronous try/catch. A throw there escapes as an
+// uncaught exception and aborts the whole Mocha process, which hides the
+// results of every test that has not run yet. `check` runs the assertions
+// in a try/catch and routes any failure through `done`, so a failing
+// assertion is reported as a normal test failure and the run continues.
+function check(done, assertions) {
+  try {
+    assertions();
+    done();
+  } catch (err) {
+    done(err);
+  }
+}
+
 describe('Local', function () {
   var bsLocal;
   beforeEach(function () {
@@ -21,8 +37,9 @@ describe('Local', function () {
   it('should have pid when running', function (done) {
     this.timeout(600000);
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(){
-      expect(bsLocal.tunnel.pid).to.not.equal(0);
-      done();
+      check(done, function(){
+        expect(bsLocal.tunnel.pid).to.not.equal(0);
+      });
     });
   });
 
@@ -30,8 +47,9 @@ describe('Local', function () {
     this.timeout(60000);
     expect(bsLocal.isRunning()).to.not.equal(true);
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY }, function(){
-      expect(bsLocal.isRunning()).to.equal(true);
-      done();
+      check(done, function(){
+        expect(bsLocal.isRunning()).to.equal(true);
+      });
     });
   });
 
@@ -213,10 +231,15 @@ describe('Local', function () {
   it('should stop local', function (done) {
     this.timeout(MAX_TIMEOUT);
     bsLocal.start({ 'key': process.env.BROWSERSTACK_ACCESS_KEY}, function(){
-      expect(bsLocal.isRunning()).to.equal(true);
+      try {
+        expect(bsLocal.isRunning()).to.equal(true);
+      } catch (err) {
+        return done(err);
+      }
       bsLocal.stop(function(){
-        expect(bsLocal.isRunning()).to.equal(false);
-        done();
+        check(done, function(){
+          expect(bsLocal.isRunning()).to.equal(false);
+        });
       });
     });
   });
@@ -280,7 +303,8 @@ describe('LocalBinary', function () {
       // ensure that we have a valid binary downloaded
 
       // removeIfInvalid();
-      (new LocalBinary()).binaryPath({}, 'abc', 9, function(binaryPath) {
+      // binaryPath signature is (conf, bsHost, key, parentRetries, callback).
+      (new LocalBinary()).binaryPath({}, null, 'abc', 9, function(binaryPath) {
         defaultBinaryPath = binaryPath;
         tempfs.mkdir({
           recursive: true
@@ -307,13 +331,13 @@ describe('LocalBinary', function () {
         var localBinary = new LocalBinary();
         var downloadStub = sandBox.stub(localBinary, 'download', function() {
           downloadStub.callArgWith(2, [ defaultBinaryPath ]);
-          expect(downloadStub.args[0][3]).to.be(5);
+          expect(downloadStub.args[0][3]).to.be(9);
         });
 
         fs.writeFile(defaultBinaryPath, 'Random String', function() {
           fs.chmod(defaultBinaryPath, '0755', function() {
             localBinary.binaryPath({
-            }, 'abc', 9, function(binaryPath) {
+            }, null, 'abc', 9, function(binaryPath) {
               expect(downloadStub.called).to.be.true;
               done();
             });
@@ -327,11 +351,11 @@ describe('LocalBinary', function () {
         var localBinary = new LocalBinary();
         var downloadStub = sandBox.stub(localBinary, 'download', function() {
           downloadStub.callArgWith(2, [ defaultBinaryPath ]);
-          expect(downloadStub.args[0][3]).to.be(5);
+          expect(downloadStub.args[0][3]).to.be(9);
         });
 
         localBinary.binaryPath({
-        }, 'abc', 9, function(binaryPath) {
+        }, null, 'abc', 9, function(binaryPath) {
           expect(downloadStub.called).to.be.true;
           done();
         });
@@ -352,55 +376,56 @@ describe('LocalBinary', function () {
     });
   });
 
-  describe('Download Path', function() {
-    var sandBox;
+  // The OS/arch -> binary filename mapping used to be asserted via
+  // getDownloadPath(), but getDownloadPath is now async and prefixes a
+  // dynamically fetched source URL (see getSourceUrl). The OS-specific part
+  // of the download path now lives entirely in getBinaryFilename(), so these
+  // tests exercise that directly. hostOS/is64bits/isArm64/isAlpine are plain
+  // instance fields, so they are overridden by assignment (no sinon needed,
+  // which also avoids double-wrapping the same property inside a loop).
+  describe('Binary filename', function() {
     var localBinary;
 
     beforeEach(function() {
-      sandBox = sinon.sandbox.create();
       localBinary = new LocalBinary();
     });
 
-    it('should return download path of darwin binary', function() {
-      var osNames = ['darwin', 'mac os'];
-      osNames.forEach(function(os) {
-        sandBox.stub(localBinary, 'hostOS', os);
-        expect(localBinary.getDownloadPath()).to.equal('https://www.browserstack.com/local-testing/downloads/binaries/BrowserStackLocal-darwin-x64');
+    it('should return darwin binary filename', function() {
+      ['darwin', 'mac os'].forEach(function(os) {
+        localBinary.hostOS = os;
+        expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-darwin-x64');
       });
     });
 
-    it('should return download path of exe binary', function() {
-      var osNames = ['mswin', 'msys', 'mingw', 'cygwin', 'bccwin', 'wince', 'emc', 'win32'];
-      osNames.forEach(function(os) {
-        sandBox.stub(localBinary, 'hostOS', os);
-        expect(localBinary.getDownloadPath()).to.equal('https://www.browserstack.com/local-testing/downloads/binaries/BrowserStackLocal.exe');
+    it('should return exe binary filename', function() {
+      ['mswin', 'msys', 'mingw', 'cygwin', 'bccwin', 'wince', 'emc', 'win32'].forEach(function(os) {
+        localBinary.hostOS = os;
+        expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal.exe');
       });
     });
 
-    it('should return download path of linux 64 arch binary', function() {
-      sandBox.stub(localBinary, 'hostOS', 'linux');
-      sandBox.stub(localBinary, 'is64bits', true);
-      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
-      expect(localBinary.getDownloadPath()).to.equal('https://www.browserstack.com/local-testing/downloads/binaries/BrowserStackLocal-linux-x64');
+    it('should return linux 64 arch binary filename', function() {
+      localBinary.hostOS = 'linux';
+      localBinary.isArm64 = false;
+      localBinary.is64bits = true;
+      localBinary.isAlpine = function() { return false; };
+      expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-linux-x64');
     });
 
-    it('should return download path of linux 32 arch binary', function() {
-      sandBox.stub(localBinary, 'hostOS', 'linux');
-      sandBox.stub(localBinary, 'is64bits', false);
-      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(false);
-      expect(localBinary.getDownloadPath()).to.equal('https://www.browserstack.com/local-testing/downloads/binaries/BrowserStackLocal-linux-ia32');
+    it('should return linux 32 arch binary filename', function() {
+      localBinary.hostOS = 'linux';
+      localBinary.isArm64 = false;
+      localBinary.is64bits = false;
+      localBinary.isAlpine = function() { return false; };
+      expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-linux-ia32');
     });
 
-    it('should return download path of alpine linux binary', function() {
-      sandBox.stub(localBinary, 'hostOS', 'linux');
-      localBinary.isAlpine = sandBox.stub(localBinary, 'isAlpine').returns(true);
-      sandBox.stub(localBinary, 'is64bits', true);
-      expect(localBinary.getDownloadPath()).to.equal('https://www.browserstack.com/local-testing/downloads/binaries/BrowserStackLocal-alpine');
-    });
-
-    afterEach(function(done) {
-      sandBox.restore();
-      done();
+    it('should return alpine linux binary filename', function() {
+      localBinary.hostOS = 'linux';
+      localBinary.isArm64 = false;
+      localBinary.is64bits = true;
+      localBinary.isAlpine = function() { return true; };
+      expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-alpine');
     });
   });
 
@@ -437,8 +462,9 @@ describe('LocalBinary', function () {
       this.timeout(MAX_TIMEOUT);
       var conf = {};
       binary.download(conf, tempDownloadPath, function (result) {
-        expect(fs.existsSync(result)).to.equal(true);
-        done();
+        check(done, function(){
+          expect(fs.existsSync(result)).to.equal(true);
+        });
       });
     });
 
@@ -450,8 +476,9 @@ describe('LocalBinary', function () {
       };
       binary.download(conf, tempDownloadPath, function (result) {
         // test for file existence
-        expect(fs.existsSync(result)).to.equal(true);
-        done();
+        check(done, function(){
+          expect(fs.existsSync(result)).to.equal(true);
+        });
       });
     });
 
