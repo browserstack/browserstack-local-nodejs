@@ -45,7 +45,7 @@ To enable verbose logging -
 ```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'verbose': 'true' }
 ```
-Note - Possible values for 'verbose' modifier are '1', '2', '3' and 'true'
+Note - Possible values for 'verbose' modifier are true, false, '1', '2', '3', 'true' and 'false'
 
 #### Folder Testing
 To test local folder rather internal server, provide path to folder as value of this option -
