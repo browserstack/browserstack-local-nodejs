@@ -15,7 +15,7 @@ var expect = require('expect.js'),
 //
 // Stubs are shell scripts, so these are skipped on Windows.
 describe('Local.start output handling', function () {
-  var stubDir, bsLocal;
+  var stubDir, bsLocal, uncaught, mochaListeners;
 
   function stub(name, body) {
     var stubPath = path.join(stubDir, name);
@@ -23,36 +23,62 @@ describe('Local.start output handling', function () {
     return stubPath;
   }
 
-  // Drives start() with the given stub and collects every callback invocation
-  // plus any uncaughtException raised out of the execFile callback.
+  // Drives start() with the given stub and collects every callback invocation.
+  // The callback, any second (fall-through) invocation and any throw all come
+  // out of the same synchronous execFile exithandler, so settling two ticks
+  // after the first callback observes all of them deterministically — no
+  // fixed sleep. The guard timer only fires if the callback never does (the
+  // exact regression this suite exists to catch), so that failure mode shows
+  // up as an assertion on calls.length instead of a mocha timeout.
   function run(stubPath, done) {
-    var calls = [], uncaught = [];
-    var existing = process.listeners('uncaughtException');
-    process.removeAllListeners('uncaughtException');
-    process.on('uncaughtException', function (err) { uncaught.push(err); });
+    var calls = [], finished = false;
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+      clearTimeout(guard);
+      done(calls, uncaught);
+    }
+
+    var guard = setTimeout(finish, 5000);
 
     bsLocal.binaryPath = stubPath;
     bsLocal.start({ key: 'dummy-key', localIdentifier: 'loc-7325' }, function (error) {
       calls.push(error);
+      setImmediate(function () { setImmediate(finish); });
     });
-
-    // Settle past the execFile callback before asserting, so a second
-    // (throwing) invocation would have happened by now if it were going to.
-    setTimeout(function () {
-      process.removeAllListeners('uncaughtException');
-      existing.forEach(function (listener) { process.on('uncaughtException', listener); });
-      done(calls, uncaught);
-    }, 1000);
   }
 
   before(function () {
     stubDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-7325-'));
   });
 
+  after(function () {
+    if (!stubDir) return;
+    if (fs.rmSync) fs.rmSync(stubDir, { recursive: true, force: true });
+    else fs.rmdirSync(stubDir, { recursive: true });
+  });
+
   beforeEach(function () {
     bsLocal = new browserstack.Local();
     // Keep the stubs from clobbering ./local.log in the repo root.
     bsLocal.logfile = path.join(stubDir, 'local.log');
+    // Never enter the retry path: it deletes the stub, then downloads and
+    // executes the real binary from the network.
+    bsLocal.retriesLeft = 0;
+
+    // Capture uncaughtExceptions for the duration of each test. Mocha's own
+    // handler is snapshotted here and restored in afterEach, so restoration
+    // survives a throwing test body.
+    uncaught = [];
+    mochaListeners = process.listeners('uncaughtException');
+    process.removeAllListeners('uncaughtException');
+    process.on('uncaughtException', function (err) { uncaught.push(err); });
+  });
+
+  afterEach(function () {
+    process.removeAllListeners('uncaughtException');
+    mochaListeners.forEach(function (listener) { process.on('uncaughtException', listener); });
   });
 
   if (os.platform().match(/win32/i)) {
@@ -82,9 +108,29 @@ describe('Local.start output handling', function () {
     });
   });
 
+  it('reports an error exactly once when the binary emits literal null', function (done) {
+    this.timeout(10000);
+    run(stub('null-output.sh', 'echo "null"; exit 0'), function (calls, uncaught) {
+      expect(uncaught).to.eql([]);
+      expect(calls.length).to.equal(1);
+      expect(calls[0].message).to.match(/^Invalid output received: /);
+      done();
+    });
+  });
+
   it('reports a fallback message when a non-connected payload has no message key', function (done) {
     this.timeout(10000);
     run(stub('no-message-key.sh', 'echo \'{"state":"disconnected"}\'; exit 0'), function (calls, uncaught) {
+      expect(uncaught).to.eql([]);
+      expect(calls.length).to.equal(1);
+      expect(calls[0].message).to.equal('Failed to start BrowserStack Local');
+      done();
+    });
+  });
+
+  it('reports a fallback message when the payload message is not a string', function (done) {
+    this.timeout(10000);
+    run(stub('non-string-message.sh', 'echo \'{"state":"disconnected","message":42}\'; exit 0'), function (calls, uncaught) {
       expect(uncaught).to.eql([]);
       expect(calls.length).to.equal(1);
       expect(calls[0].message).to.equal('Failed to start BrowserStack Local');
@@ -98,6 +144,48 @@ describe('Local.start output handling', function () {
       expect(uncaught).to.eql([]);
       expect(calls.length).to.equal(1);
       expect(calls[0].message).to.equal('Invalid key');
+      done();
+    });
+  });
+
+  it('surfaces the JSON diagnostic when the binary exits non-zero with a payload', function (done) {
+    this.timeout(10000);
+    run(stub('nonzero-with-payload.sh', 'echo \'{"state":"disconnected","message":{"message":"Invalid key"}}\'; exit 1'), function (calls, uncaught) {
+      expect(uncaught).to.eql([]);
+      expect(calls.length).to.equal(1);
+      expect(calls[0].message).to.equal('Invalid key');
+      done();
+    });
+  });
+
+  it('startSync returns an error without deleting the binary on non-JSON output', function () {
+    var stubPath = stub('sync-garbage.sh', 'echo "segmentation fault"; exit 0');
+    bsLocal.binaryPath = stubPath;
+    var err = bsLocal.startSync({ key: 'dummy-key', localIdentifier: 'loc-7325' });
+    expect(err).to.be.an('object');
+    expect(err.message).to.match(/^Invalid output received: /);
+    // The old code misclassified parse failures as binary-execution failures
+    // and deleted the binary before re-downloading it.
+    expect(fs.existsSync(stubPath)).to.equal(true);
+  });
+
+  it('startSync returns an error when the binary emits literal null', function () {
+    var stubPath = stub('sync-null.sh', 'echo "null"; exit 0');
+    bsLocal.binaryPath = stubPath;
+    var err = bsLocal.startSync({ key: 'dummy-key', localIdentifier: 'loc-7325' });
+    expect(err).to.be.an('object');
+    expect(err.message).to.match(/^Invalid output received: /);
+  });
+
+  it('truncates oversized non-JSON output attached to the error', function (done) {
+    this.timeout(10000);
+    // ~64KB of garbage; extra should be capped at 1KB plus a truncation note.
+    run(stub('huge-output.sh', 'head -c 65536 /dev/zero | tr "\\0" "x"; exit 0'), function (calls, uncaught) {
+      expect(uncaught).to.eql([]);
+      expect(calls.length).to.equal(1);
+      expect(calls[0].message).to.match(/^Invalid output received: /);
+      expect(calls[0].extra.length).to.be.below(1100);
+      expect(calls[0].extra).to.match(/\[truncated \d+ bytes\]$/);
       done();
     });
   });
