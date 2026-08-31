@@ -19,9 +19,15 @@ declare module "browserstack-local" {
     [key: string]: string | boolean;
   }
 
+  interface LocalError extends Error {
+    /** Raw binary output (truncated to 1KB) attached when the output could not be parsed. */
+    extra?: string;
+  }
+
   class Local {
-    start(options: Partial<Options>, callback: (error?: Error) => void): void;
+    start(options: Partial<Options>, callback: (error?: LocalError) => void): void;
+    startSync(options: Partial<Options>): LocalError | undefined;
     isRunning(): boolean;
-    stop(callback: () => void): void;
+    stop(callback: (error?: LocalError) => void): void;
   }
 }
