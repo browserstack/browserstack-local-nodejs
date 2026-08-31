@@ -168,27 +168,48 @@ describe('Local.start output handling', function () {
     });
   });
 
-  it('records the daemon pid when a connected payload precedes a non-zero exit', function (done) {
+  it('treats a connected payload as success even when the process exits non-zero', function (done) {
     this.timeout(10000);
     run(stub('connected-then-fail.sh', 'echo \'{"state":"connected","pid":12345}\'; exit 1'), done, function (calls, uncaught) {
       expect(uncaught).to.eql([]);
       expect(calls.length).to.equal(1);
-      expect(calls[0]).to.be.an('object');
-      // The daemon is up even though the foreground process errored;
-      // stop() must still be able to reach it.
+      // The daemon is up despite the foreground exit status; reporting an
+      // error here left isRunning() true while start() claimed failure.
+      expect(calls[0]).to.equal(undefined);
       expect(bsLocal.pid).to.equal(12345);
+      expect(bsLocal.isProcessRunning).to.equal(true);
     });
   });
 
-  it('startSync returns an error without deleting the binary on non-JSON output', function () {
+  it('keeps the unparsed payload as extra when a non-zero exit has an unusable message', function (done) {
+    this.timeout(10000);
+    run(stub('nonzero-bad-message.sh', 'echo \'{"state":"disconnected","message":42}\'; exit 1'), done, function (calls, uncaught) {
+      expect(uncaught).to.eql([]);
+      expect(calls.length).to.equal(1);
+      expect(calls[0].message).to.match(/Command failed/);
+      expect(calls[0].extra).to.match(/"message":42/);
+    });
+  });
+
+  it('startSync keeps a user-supplied binary on non-JSON output', function () {
     var stubPath = stub('sync-garbage.sh', 'echo "segmentation fault"; exit 0');
-    bsLocal.binaryPath = stubPath;
-    var err = bsLocal.startSync({ key: 'dummy-key', localIdentifier: 'loc-7325' });
+    var err = bsLocal.startSync({ key: 'dummy-key', localIdentifier: 'loc-7325', binarypath: stubPath });
     expect(err).to.be.an('object');
     expect(err.message).to.match(/^Invalid output received: /);
     // The old code misclassified parse failures as binary-execution failures
-    // and deleted the binary before re-downloading it.
+    // and deleted the binary (even a user-supplied one) before re-downloading.
     expect(fs.existsSync(stubPath)).to.equal(true);
+  });
+
+  it('startSync evicts a downloaded binary that prints non-JSON output, without retrying', function () {
+    var stubPath = stub('sync-garbage-evict.sh', 'echo "segmentation fault"; exit 0');
+    bsLocal.binaryPath = stubPath; // simulates a previously downloaded binary
+    var err = bsLocal.startSync({ key: 'dummy-key', localIdentifier: 'loc-7325' });
+    expect(err).to.be.an('object');
+    expect(err.message).to.match(/^Invalid output received: /);
+    // Corrupt-but-runnable downloads self-heal on the NEXT start via a fresh
+    // download, instead of the old delete-and-retry-9-times loop.
+    expect(fs.existsSync(stubPath)).to.equal(false);
   });
 
   it('startSync returns an error when the binary emits literal null', function () {
