@@ -451,6 +451,10 @@ describe('LocalBinary', function () {
 
     beforeEach(function () {
       binary = new LocalBinary();
+      // binaryPath() normally sets this before calling download(); without it
+      // the source-url fetch is rejected with "Invalid auth token" and the
+      // download can never succeed, so these tests could not pass.
+      binary.key = process.env.BROWSERSTACK_ACCESS_KEY;
       tempDownloadPath = path.join(process.cwd(), 'download');
     });
 
@@ -465,7 +469,7 @@ describe('LocalBinary', function () {
         check(done, function(){
           expect(fs.existsSync(result)).to.equal(true);
         });
-      });
+      }, binary.baseRetries);
     });
 
     it('should download binaries with proxy', function (done) {
@@ -479,13 +483,13 @@ describe('LocalBinary', function () {
         check(done, function(){
           expect(fs.existsSync(result)).to.equal(true);
         });
-      });
+      }, binary.baseRetries);
     });
 
     it('should download binaries in sync', function () {
       this.timeout(MAX_TIMEOUT);
       var conf = {};
-      const result = binary.downloadSync(conf, tempDownloadPath);
+      const result = binary.downloadSync(conf, tempDownloadPath, binary.baseRetries);
       expect(fs.existsSync(result)).to.equal(true);
     });
   });
