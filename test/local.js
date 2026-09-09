@@ -490,3 +490,74 @@ describe('LocalBinary', function () {
     });
   });
 });
+
+// Regression tests: the binary-download fallback signalling used to live on
+// process.env, so (a) a value planted in process.env steered the download to an
+// arbitrary host with no validation, and (b) a failure on one Local instance bled
+// into every sibling instance in the same process. Both flip from FAIL on the
+// pre-fix code to PASS once the state is per-instance.
+describe('Binary download state isolation', function () {
+  var sandBox, childProcess;
+  var Local = require('../lib/Local');
+
+  beforeEach(function () {
+    sandBox = sinon.sandbox.create();
+    childProcess = require('child_process');
+  });
+
+  afterEach(function () {
+    sandBox.restore();
+    delete process.env.BINARY_DOWNLOAD_SOURCE_URL;
+    delete process.env.BINARY_DOWNLOAD_FALLBACK_ENABLED;
+    delete process.env.BINARY_DOWNLOAD_ERROR_MESSAGE;
+  });
+
+  it('does not honor a BINARY_DOWNLOAD_SOURCE_URL planted in process.env', function () {
+    // An attacker (CI secret injection, malicious dep, shared-workspace .env) or a
+    // sibling instance leaves these two vars set.
+    process.env.BINARY_DOWNLOAD_SOURCE_URL = 'https://attacker.example.com/evil';
+    process.env.BINARY_DOWNLOAD_FALLBACK_ENABLED = 'true';
+
+    // Stub the endpoint API child process so nothing hits the network; the stub
+    // stands in for a legitimate BrowserStack endpoint response.
+    var spawnStub = sandBox.stub(childProcess, 'spawnSync', function () {
+      return {
+        stdout: Buffer.from('https://legit.browserstack.com/bs\n'),
+        stderr: Buffer.from('')
+      };
+    });
+
+    var binary = new LocalBinary();
+    binary.key = 'DUMMY';
+    binary.bsHost = 'local.browserstack.com';
+    binary.parentRetries = 9;
+
+    var url = binary.getSourceUrlSync({}, 9);
+
+    // Pre-fix: the env-shortcut returns the attacker URL and spawnSync is never
+    // reached. Post-fix: the shortcut is gone, so the real endpoint call runs.
+    expect(url).to.not.equal('https://attacker.example.com/evil');
+    expect(url).to.equal('https://legit.browserstack.com/bs');
+    expect(spawnStub.called).to.equal(true);
+  });
+
+  it('keeps download-fallback state per Local instance (no cross-instance bleed)', function () {
+    var a = new Local();
+    var b = new Local();
+
+    // Instance A records a download failure (as its retry catch block does).
+    a.binaryDownloadState.fallbackEnabled = true;
+    a.binaryDownloadState.errorMessage = 'A private error: key=A_SECRET';
+    a.binaryDownloadState.sourceURL = 'https://a-context.example/bs';
+
+    // Instance B, which never failed, must be unaffected.
+    expect(b.binaryDownloadState.fallbackEnabled).to.equal(false);
+    expect(b.binaryDownloadState.errorMessage).to.equal(null);
+    expect(b.binaryDownloadState.sourceURL).to.equal(null);
+
+    // And nothing leaked to the process-global env.
+    expect(process.env.BINARY_DOWNLOAD_FALLBACK_ENABLED).to.equal(undefined);
+    expect(process.env.BINARY_DOWNLOAD_SOURCE_URL).to.equal(undefined);
+    expect(process.env.BINARY_DOWNLOAD_ERROR_MESSAGE).to.equal(undefined);
+  });
+});
