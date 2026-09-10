@@ -482,6 +482,52 @@ describe('LocalBinary', function () {
       });
     });
 
+    it('should pass proxy authentication to the binary download when proxyUser/proxyPass are set', function () {
+      var https = require('https');
+      var getDownloadPathStub = sinon.stub(binary, 'getDownloadPath', function (conf, retries, cb) {
+        cb(null, 'https://bstack-downloads.example/BrowserStackLocal');
+      });
+      var httpsGetStub = sinon.stub(https, 'get').returns({ on: function () { return this; } });
+
+      try {
+        var conf = {
+          proxyHost: '127.0.0.1',
+          proxyPort: proxyPort,
+          proxyUser: 'user',
+          proxyPass: 'pass'
+        };
+        binary.download(conf, tempDownloadPath, function () {});
+
+        expect(httpsGetStub.calledOnce).to.equal(true);
+        var passedOptions = httpsGetStub.firstCall.args[0];
+        expect(passedOptions.agent).to.be.an('object');
+        expect(passedOptions.agent.proxy.auth).to.equal('user:pass');
+      } finally {
+        httpsGetStub.restore();
+        getDownloadPathStub.restore();
+      }
+    });
+
+    it('should not set proxy authentication when only host/port are provided', function () {
+      var https = require('https');
+      var getDownloadPathStub = sinon.stub(binary, 'getDownloadPath', function (conf, retries, cb) {
+        cb(null, 'https://bstack-downloads.example/BrowserStackLocal');
+      });
+      var httpsGetStub = sinon.stub(https, 'get').returns({ on: function () { return this; } });
+
+      try {
+        var conf = { proxyHost: '127.0.0.1', proxyPort: proxyPort };
+        binary.download(conf, tempDownloadPath, function () {});
+
+        var passedOptions = httpsGetStub.firstCall.args[0];
+        expect(passedOptions.agent).to.be.an('object');
+        expect(passedOptions.agent.proxy.auth).to.equal(undefined);
+      } finally {
+        httpsGetStub.restore();
+        getDownloadPathStub.restore();
+      }
+    });
+
     it('should download binaries in sync', function () {
       this.timeout(MAX_TIMEOUT);
       var conf = {};
