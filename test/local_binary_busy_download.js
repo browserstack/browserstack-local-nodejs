@@ -58,6 +58,41 @@ describe('LocalBinary busy-binary download handling', function () {
     });
   });
 
+  describe('async download completion', function () {
+    // The callback contract has to be completed on every path, or
+    // Local.start() waits on a callback that never arrives.
+    it('completes the callback when retries are exhausted', function (done) {
+      var binary = new LocalBinary();
+      binary.retryBinaryDownload({}, os.tmpdir(), function (binaryPath) {
+        expect(binaryPath).to.be(undefined);
+        done();
+      }, 0, path.join(os.tmpdir(), 'bs-local-absent'));
+    });
+
+    // node emits 'close' after 'error', so a failed attempt used to report
+    // success through the close handler as well as retrying.
+    it('reports a failed attempt once, not alongside a success', function (done) {
+      var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-')),
+          target = path.join(dir, 'BrowserStackLocal'),
+          calls = [];
+      fs.mkdirSync(target);
+
+      var binary = new LocalBinary();
+      binary.getDownloadPath = function (conf, retries, cb) {
+        cb(null, 'https://127.0.0.1:1/BrowserStackLocal');
+      };
+      binary.download({}, dir, function (binaryPath) { calls.push(binaryPath); }, 0);
+
+      setTimeout(function () {
+        expect(calls.length).to.equal(1);
+        expect(calls[0]).to.be(undefined);
+        fs.rmdirSync(target);
+        fs.rmdirSync(dir);
+        done();
+      }, 1500);
+    });
+  });
+
   describe('isBinaryBusy', function () {
     it('reports a readable file as free', function () {
       var binary = new LocalBinary(),
