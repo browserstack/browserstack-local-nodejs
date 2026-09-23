@@ -3,7 +3,8 @@ var expect = require('expect.js'),
     fs = require('fs'),
     os = require('os'),
     path = require('path'),
-    LocalBinary = require('../lib/LocalBinary');
+    LocalBinary = require('../lib/LocalBinary'),
+    browserstack = require('../index');
 
 // Regression tests for LOC-7420.
 //
@@ -93,6 +94,42 @@ describe('LocalBinary busy-binary download handling', function () {
     });
   });
 
+  describe('source url failure', function () {
+    it('completes the callback when the download url cannot be fetched', function (done) {
+      var binary = new LocalBinary();
+      binary.getDownloadPath = function (conf, retries, cb) { cb(new Error('invalid key')); };
+      binary.download({}, os.tmpdir(), function (binaryPath) {
+        expect(binaryPath).to.be(undefined);
+        done();
+      }, 9);
+    });
+  });
+
+  describe('unremovable binary', function () {
+    // An unusable binary whose unlink fails used to be handed straight back by
+    // binaryPath() and re-spawned for every remaining retry.
+    it('does not retry when the binary cannot be replaced', function () {
+      var dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-')),
+          binaryPath = path.join(dir, 'BrowserStackLocal');
+      fs.writeFileSync(binaryPath, 'not executable', { mode: 0o644 });
+      fs.chmodSync(dir, 0o555); // so the unlink fails
+
+      try {
+        var bsLocal = new browserstack.Local();
+        bsLocal.binaryPath = binaryPath;
+        var result = bsLocal.startSync({ key: 'dummy-key' });
+
+        expect(result).to.be.a(Object);
+        expect(result.message).to.contain('Error while trying to execute binary');
+        expect(bsLocal.retriesLeft).to.equal(8); // one attempt, not nine
+      } finally {
+        fs.chmodSync(dir, 0o755);
+        fs.unlinkSync(binaryPath);
+        fs.rmdirSync(dir);
+      }
+    });
+  });
+
   describe('isBinaryBusy', function () {
     it('reports a readable file as free', function () {
       var binary = new LocalBinary(),
@@ -129,6 +166,7 @@ describe('LocalBinary busy-binary download handling', function () {
       expect(stderr).to.contain('Got Error while downloading binary file');
       // The signature of the old defect: node's unhandled-'error' bail-out.
       expect(stderr).to.not.contain('Unhandled \'error\' event');
+      expect(obj.stdout.toString()).to.not.contain('Done');
       expect(obj.status).to.equal(1);
 
       fs.rmdirSync(target);
