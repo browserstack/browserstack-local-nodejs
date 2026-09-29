@@ -130,6 +130,47 @@ describe('LocalBinary busy-binary download handling', function () {
     });
   });
 
+  // SDK-7713: parallel runs share ~/.browserstack/BrowserStackLocal.exe, and
+  // while one run executes it the file is locked. A binary that still runs
+  // must be reused, not replaced. Stubs are shell scripts, so skipped on Windows.
+  (process.platform === 'win32' ? describe.skip : describe)('usable binary reuse', function () {
+    var dir;
+    beforeEach(function () { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-')); });
+
+    function stub(output) {
+      var p = path.join(dir, 'BrowserStackLocal');
+      fs.writeFileSync(p, '#!/bin/sh\necho "' + output + '"\n', { mode: 0o755 });
+      return p;
+    }
+
+    it('reuses a usable binary instead of re-downloading (sync)', function () {
+      var binary = new LocalBinary(), downloaded = false, p = stub('BrowserStack Local version 8.9.36');
+      binary.downloadSync = function () { downloaded = true; };
+
+      expect(binary.retryBinaryDownload({}, dir, null, 9, p)).to.equal(p);
+      expect(downloaded).to.be(false);
+      expect(fs.existsSync(p)).to.be(true);
+    });
+
+    it('still replaces a binary that does not run (sync)', function () {
+      var binary = new LocalBinary(), downloaded = false, p = stub('garbage');
+      binary.downloadSync = function () { downloaded = true; };
+
+      binary.retryBinaryDownload({}, dir, null, 9, p);
+      expect(downloaded).to.be(true);
+    });
+
+    it('reuses a usable binary instead of re-downloading (async)', function (done) {
+      var binary = new LocalBinary(), p = stub('BrowserStack Local version 8.9.36');
+      binary.download = function () { done(new Error('should not re-download')); };
+
+      binary.retryBinaryDownload({}, dir, function (binaryPath) {
+        expect(binaryPath).to.equal(p);
+        done();
+      }, 9, p);
+    });
+  });
+
   describe('isBinaryBusy', function () {
     it('reports a readable file as free', function () {
       var binary = new LocalBinary(),
