@@ -130,44 +130,45 @@ describe('LocalBinary busy-binary download handling', function () {
     });
   });
 
-  // SDK-7713: parallel runs share ~/.browserstack/BrowserStackLocal.exe, and
-  // while one run executes it the file is locked. A binary that still runs
-  // must be reused, not replaced. Stubs are shell scripts, so skipped on Windows.
-  (process.platform === 'win32' ? describe.skip : describe)('usable binary reuse', function () {
-    var dir;
-    beforeEach(function () { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-')); });
+  // SDK-7713: binaryPath() read this.windows before anything had set it, so on
+  // Windows it looked for "BrowserStackLocal" without ".exe", never found it, and
+  // re-downloaded on every start -- colliding with any other run executing it.
+  describe('existing binary on Windows', function () {
+    var dir, exe;
 
-    function stub(output) {
-      var p = path.join(dir, 'BrowserStackLocal');
-      fs.writeFileSync(p, '#!/bin/sh\necho "' + output + '"\n', { mode: 0o755 });
-      return p;
+    function windowsBinary() {
+      var platform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        var binary = new LocalBinary();
+      } finally {
+        Object.defineProperty(process, 'platform', platform);
+      }
+      binary.orderedPaths = [dir];
+      binary.download = binary.downloadSync = function () { throw new Error('should not re-download'); };
+      return binary;
     }
 
-    it('reuses a usable binary instead of re-downloading (sync)', function () {
-      var binary = new LocalBinary(), downloaded = false, p = stub('BrowserStack Local version 8.9.36');
-      binary.downloadSync = function () { downloaded = true; };
-
-      expect(binary.retryBinaryDownload({}, dir, null, 9, p)).to.equal(p);
-      expect(downloaded).to.be(false);
-      expect(fs.existsSync(p)).to.be(true);
+    beforeEach(function () {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-'));
+      exe = path.join(dir, 'BrowserStackLocal.exe');
+      fs.writeFileSync(exe, 'binary', { mode: 0o755 });
     });
 
-    it('still replaces a binary that does not run (sync)', function () {
-      var binary = new LocalBinary(), downloaded = false, p = stub('garbage');
-      binary.downloadSync = function () { downloaded = true; };
-
-      binary.retryBinaryDownload({}, dir, null, 9, p);
-      expect(downloaded).to.be(true);
+    afterEach(function () {
+      fs.unlinkSync(exe);
+      fs.rmdirSync(dir);
     });
 
-    it('reuses a usable binary instead of re-downloading (async)', function (done) {
-      var binary = new LocalBinary(), p = stub('BrowserStack Local version 8.9.36');
-      binary.download = function () { done(new Error('should not re-download')); };
+    it('reuses BrowserStackLocal.exe instead of re-downloading (sync)', function () {
+      expect(windowsBinary().binaryPath({}, null, 'key', 9)).to.equal(exe);
+    });
 
-      binary.retryBinaryDownload({}, dir, function (binaryPath) {
-        expect(binaryPath).to.equal(p);
+    it('reuses BrowserStackLocal.exe instead of re-downloading (async)', function (done) {
+      windowsBinary().binaryPath({}, null, 'key', 9, function (binaryPath) {
+        expect(binaryPath).to.equal(exe);
         done();
-      }, 9, p);
+      });
     });
   });
 
