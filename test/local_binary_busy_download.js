@@ -130,6 +130,48 @@ describe('LocalBinary busy-binary download handling', function () {
     });
   });
 
+  // SDK-7713: binaryPath() read this.windows before anything had set it, so on
+  // Windows it looked for "BrowserStackLocal" without ".exe", never found it, and
+  // re-downloaded on every start -- colliding with any other run executing it.
+  describe('existing binary on Windows', function () {
+    var dir, exe;
+
+    function windowsBinary() {
+      var platform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        var binary = new LocalBinary();
+      } finally {
+        Object.defineProperty(process, 'platform', platform);
+      }
+      binary.orderedPaths = [dir];
+      binary.download = binary.downloadSync = function () { throw new Error('should not re-download'); };
+      return binary;
+    }
+
+    beforeEach(function () {
+      dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bs-local-'));
+      exe = path.join(dir, 'BrowserStackLocal.exe');
+      fs.writeFileSync(exe, 'binary', { mode: 0o755 });
+    });
+
+    afterEach(function () {
+      fs.unlinkSync(exe);
+      fs.rmdirSync(dir);
+    });
+
+    it('reuses BrowserStackLocal.exe instead of re-downloading (sync)', function () {
+      expect(windowsBinary().binaryPath({}, null, 'key', 9)).to.equal(exe);
+    });
+
+    it('reuses BrowserStackLocal.exe instead of re-downloading (async)', function (done) {
+      windowsBinary().binaryPath({}, null, 'key', 9, function (binaryPath) {
+        expect(binaryPath).to.equal(exe);
+        done();
+      });
+    });
+  });
+
   describe('isBinaryBusy', function () {
     it('reports a readable file as free', function () {
       var binary = new LocalBinary(),
