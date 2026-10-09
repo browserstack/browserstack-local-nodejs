@@ -393,7 +393,16 @@ describe('LocalBinary', function () {
     it('should return darwin binary filename', function() {
       ['darwin', 'mac os'].forEach(function(os) {
         localBinary.hostOS = os;
+        localBinary.isArm64 = false;
         expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-darwin-x64');
+      });
+    });
+
+    it('should return darwin arm64 binary filename', function() {
+      ['darwin', 'mac os'].forEach(function(os) {
+        localBinary.hostOS = os;
+        localBinary.isArm64 = true;
+        expect(localBinary.getBinaryFilename()).to.equal('BrowserStackLocal-darwin-arm64');
       });
     });
 
