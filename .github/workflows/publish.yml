@@ -1,4 +1,4 @@
-name: publish
+name: Local Binding Publish
 
 on:
   workflow_dispatch:
