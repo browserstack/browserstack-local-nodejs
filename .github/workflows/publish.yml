@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: Version bump from the latest published version (prerelease publishes <next>-tp.N to the next dist-tag, without a bump PR)
+        description: Version bump
         required: true
         default: patch
         type: choice
@@ -12,17 +12,13 @@ on:
           - patch
           - minor
           - major
-          - prerelease
 
 permissions:
   contents: read
 
-concurrency:
-  group: publish
-  cancel-in-progress: false
-
 jobs:
   publish:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -30,16 +26,9 @@ jobs:
     env:
       BUMP: ${{ inputs.bump }}
     steps:
-      - name: Require master
-        if: github.ref != 'refs/heads/master'
-        run: |
-          echo "::error::run this workflow from master"
-          exit 1
-
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          persist-credentials: false
 
       # No registry-url: setup-node would write an .npmrc token line that shadows OIDC.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -48,56 +37,19 @@ jobs:
 
       - run: npm install -g npm@11.21.0
 
-      - name: Set version
-        run: |
-          name=$(node -p 'require("./package.json").name')
-          [ "$name" = browserstack-local ] || { echo "::error::package $name != browserstack-local"; exit 1; }
-          # Start from whichever is higher: npm latest or master, since master can lag until the bump PR merges.
-          published=$(npm view browserstack-local dist-tags.latest)
-          local_version=$(node -p 'require("./package.json").version')
-          base=$(node -e 'const p=v=>v.split("-")[0].split(".").map(Number),[a,b]=process.argv.slice(1),x=p(a),y=p(b);for(let i=0;i<3;i++){if(x[i]!==y[i]){console.log(x[i]>y[i]?a:b);process.exit()}}console.log(a)' "$published" "$local_version")
-          npm version "$base" --no-git-tag-version --allow-same-version > /dev/null
-          if [ "$BUMP" = prerelease ]; then
-            npm version prerelease --preid tp --no-git-tag-version > /dev/null
-            # Skip -tp.N numbers that are already on npm.
-            while [ "$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$(node -p 'require("./package.json").version')")" != 404 ]; do
-              npm version prerelease --preid tp --no-git-tag-version > /dev/null
-            done
-            echo "DIST_TAG=next" >> "$GITHUB_ENV"
-          else
-            npm version "$BUMP" --no-git-tag-version > /dev/null
-            echo "DIST_TAG=latest" >> "$GITHUB_ENV"
-          fi
-          version=$(node -p 'require("./package.json").version')
-          code=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$version")
-          [ "$code" = 404 ] || { echo "::error::browserstack-local@$version already exists on npm (HTTP $code)"; exit 1; }
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
-            echo "::error::tag v$version already exists"
-            exit 1
-          fi
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "Publishing $version (base $base: npm latest $published, master $local_version) to dist-tag $([ "$BUMP" = prerelease ] && echo next || echo latest)"
-
-      - name: Commit and tag
+      - name: Upgrade version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -qam "$VERSION"
-          git tag -a "v$VERSION" -m "$VERSION"
+          npm version "$BUMP"
 
       - name: Publish
-        run: npm publish --tag "$DIST_TAG" --access public
+        run: npm publish --access public
 
-      - name: Push tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/v$VERSION"
-
-      - name: Push version bump branch
-        if: env.DIST_TAG == 'latest'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Push tag and version bump branch
         run: |
-          branch="release-v$VERSION-$(date +%s)"
-          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          version=$(node -p 'require("./package.json").version')
+          branch="release-v$version-$(date +%s)"
+          git push origin "v$version"
+          git push origin "HEAD:refs/heads/$branch"
           echo "Open the version bump PR: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/master...$branch?expand=1" | tee -a "$GITHUB_STEP_SUMMARY"
