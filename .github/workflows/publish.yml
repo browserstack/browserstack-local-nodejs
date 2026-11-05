@@ -1,0 +1,65 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish; the v<version> tag must already be pushed (npm version + git push --follow-tags)
+        required: true
+        type: string
+      tag:
+        description: npm dist-tag (latest for releases; prereleases must use another tag, e.g. next)
+        required: true
+        default: latest
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ inputs.version }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Validate inputs
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::version $VERSION is not semver"; exit 1; }
+          [[ "$TAG" =~ ^[a-z][a-z0-9-]*$ ]] || { echo "::error::invalid dist-tag $TAG"; exit 1; }
+          if [ "$TAG" = latest ] && [[ "$VERSION" == *-* ]]; then
+            echo "::error::prerelease $VERSION cannot be published to latest"
+            exit 1
+          fi
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/tags/v${{ inputs.version }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # No registry-url: setup-node would write an .npmrc token line that shadows OIDC.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+
+      - run: npm install -g npm@11.21.0
+
+      - name: Verify package
+        run: |
+          name=$(node -p 'require("./package.json").name')
+          actual=$(node -p 'require("./package.json").version')
+          [ "$name" = browserstack-local ] || { echo "::error::package $name != browserstack-local"; exit 1; }
+          [ "$actual" = "$VERSION" ] || { echo "::error::package.json $actual != input $VERSION"; exit 1; }
+          if [ "$TAG" = latest ] && ! git merge-base --is-ancestor HEAD origin/master; then
+            echo "::error::v$VERSION is not on master"
+            exit 1
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$VERSION")
+          [ "$code" = 404 ] || { echo "::error::browserstack-local@$VERSION already exists on npm (HTTP $code)"; exit 1; }
+
+      - name: Publish
+        run: npm publish --tag "$TAG" --access public
