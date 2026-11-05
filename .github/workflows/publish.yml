@@ -48,7 +48,6 @@ jobs:
 
       - name: Push tag and version bump branch
         run: |
-          version=$(node -p 'require("./package.json").version')
-          branch="release-v$version-$(date +%s)"
+          branch="release-$(date +%s)"
           git push --follow-tags origin "HEAD:refs/heads/$branch"
           echo "Open the version bump PR: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/master...$branch?expand=1" | tee -a "$GITHUB_STEP_SUMMARY"
