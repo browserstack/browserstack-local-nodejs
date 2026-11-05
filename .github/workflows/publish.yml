@@ -3,41 +3,41 @@ name: publish
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: Version to publish; the v<version> tag must already be pushed (npm version + git push --follow-tags)
+      bump:
+        description: Version bump from the latest published version (prerelease publishes <next>-tp.N to the next dist-tag, without a bump PR)
         required: true
-        type: string
-      tag:
-        description: npm dist-tag (latest for releases; prereleases must use another tag, e.g. next)
-        required: true
-        default: latest
-        type: string
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
 
 permissions:
   contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     env:
-      VERSION: ${{ inputs.version }}
-      TAG: ${{ inputs.tag }}
+      BUMP: ${{ inputs.bump }}
     steps:
-      - name: Validate inputs
+      - name: Require master
+        if: github.ref != 'refs/heads/master'
         run: |
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "::error::version $VERSION is not semver"; exit 1; }
-          [[ "$TAG" =~ ^[a-z][a-z0-9-]*$ ]] || { echo "::error::invalid dist-tag $TAG"; exit 1; }
-          if [ "$TAG" = latest ] && [[ "$VERSION" == *-* ]]; then
-            echo "::error::prerelease $VERSION cannot be published to latest"
-            exit 1
-          fi
+          echo "::error::run this workflow from master"
+          exit 1
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: refs/tags/v${{ inputs.version }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -48,18 +48,56 @@ jobs:
 
       - run: npm install -g npm@11.21.0
 
-      - name: Verify package
+      - name: Set version
         run: |
           name=$(node -p 'require("./package.json").name')
-          actual=$(node -p 'require("./package.json").version')
           [ "$name" = browserstack-local ] || { echo "::error::package $name != browserstack-local"; exit 1; }
-          [ "$actual" = "$VERSION" ] || { echo "::error::package.json $actual != input $VERSION"; exit 1; }
-          if [ "$TAG" = latest ] && ! git merge-base --is-ancestor HEAD origin/master; then
-            echo "::error::v$VERSION is not on master"
+          # Start from whichever is higher: npm latest or master, since master can lag until the bump PR merges.
+          published=$(npm view browserstack-local dist-tags.latest)
+          local_version=$(node -p 'require("./package.json").version')
+          base=$(node -e 'const p=v=>v.split("-")[0].split(".").map(Number),[a,b]=process.argv.slice(1),x=p(a),y=p(b);for(let i=0;i<3;i++){if(x[i]!==y[i]){console.log(x[i]>y[i]?a:b);process.exit()}}console.log(a)' "$published" "$local_version")
+          npm version "$base" --no-git-tag-version --allow-same-version > /dev/null
+          if [ "$BUMP" = prerelease ]; then
+            npm version prerelease --preid tp --no-git-tag-version > /dev/null
+            # Skip -tp.N numbers that are already on npm.
+            while [ "$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$(node -p 'require("./package.json").version')")" != 404 ]; do
+              npm version prerelease --preid tp --no-git-tag-version > /dev/null
+            done
+            echo "DIST_TAG=next" >> "$GITHUB_ENV"
+          else
+            npm version "$BUMP" --no-git-tag-version > /dev/null
+            echo "DIST_TAG=latest" >> "$GITHUB_ENV"
+          fi
+          version=$(node -p 'require("./package.json").version')
+          code=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$version")
+          [ "$code" = 404 ] || { echo "::error::browserstack-local@$version already exists on npm (HTTP $code)"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "::error::tag v$version already exists"
             exit 1
           fi
-          code=$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/browserstack-local/$VERSION")
-          [ "$code" = 404 ] || { echo "::error::browserstack-local@$VERSION already exists on npm (HTTP $code)"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "Publishing $version (base $base: npm latest $published, master $local_version) to dist-tag $([ "$BUMP" = prerelease ] && echo next || echo latest)"
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -qam "$VERSION"
+          git tag -a "v$VERSION" -m "$VERSION"
 
       - name: Publish
-        run: npm publish --tag "$TAG" --access public
+        run: npm publish --tag "$DIST_TAG" --access public
+
+      - name: Push tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "refs/tags/v$VERSION"
+
+      - name: Push version bump branch
+        if: env.DIST_TAG == 'latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="release-v$VERSION-$(date +%s)"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$branch"
+          echo "Open the version bump PR: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/compare/master...$branch?expand=1" | tee -a "$GITHUB_STEP_SUMMARY"
