@@ -3,8 +3,8 @@ name: publish
 on:
   workflow_dispatch:
     inputs:
-      bump:
-        description: Version bump (prerelease publishes <next>-tp.0 to the next dist-tag for testing)
+      version_type:
+        description: Version Type
         required: true
         default: patch
         type: choice
@@ -25,7 +25,7 @@ jobs:
       contents: write
       id-token: write
     env:
-      BUMP: ${{ inputs.bump }}
+      VERSION_TYPE: ${{ inputs.version_type }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -42,17 +42,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          npm version "$BUMP" --preid tp
+          npm version "$VERSION_TYPE" --preid tp
 
       - name: Publish
-        run: npm publish --access public --tag "$([ "$BUMP" = prerelease ] && echo next || echo latest)"
+        run: npm publish --access public --tag "$([ "$VERSION_TYPE" = prerelease ] && echo next || echo latest)"
 
       - name: Push tag
-        if: inputs.bump == 'prerelease'
+        if: inputs.version_type == 'prerelease'
         run: git push origin "$(git describe --exact-match)"
 
       - name: Push tag and version bump branch
-        if: inputs.bump != 'prerelease'
+        if: inputs.version_type != 'prerelease'
         run: |
           branch="release-$(date +%s)"
           git push --follow-tags origin "HEAD:refs/heads/$branch"
