@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: Version bump
+        description: Version bump (prerelease publishes <next>-tp.0 to the next dist-tag for testing)
         required: true
         default: patch
         type: choice
@@ -12,6 +12,7 @@ on:
           - patch
           - minor
           - major
+          - prerelease
 
 permissions:
   contents: read
@@ -41,12 +42,17 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          npm version "$BUMP"
+          npm version "$BUMP" --preid tp
 
       - name: Publish
-        run: npm publish --access public
+        run: npm publish --access public --tag "$([ "$BUMP" = prerelease ] && echo next || echo latest)"
+
+      - name: Push tag
+        if: inputs.bump == 'prerelease'
+        run: git push origin "$(git describe --exact-match)"
 
       - name: Push tag and version bump branch
+        if: inputs.bump != 'prerelease'
         run: |
           branch="release-$(date +%s)"
           git push --follow-tags origin "HEAD:refs/heads/$branch"
