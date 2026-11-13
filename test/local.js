@@ -491,6 +491,133 @@ describe('LocalBinary', function () {
   });
 });
 
+// Regression tests for https://github.com/browserstack/browserstack-local-nodejs/issues/164:
+// proxyUser/proxyPass were accepted by Local's config and forwarded to the
+// BrowserStackLocal *binary* itself (--proxy-user/--proxy-pass), but never reached
+// the node-side binary download, so an authenticating proxy rejected the download
+// even though the same config worked for everything the binary does afterwards.
+describe('Proxy authentication for binary download', function () {
+  var https = require('https');
+  var childProcess = require('child_process');
+  var Local = require('../lib/Local');
+  var binary, sandBox, tempDownloadPath;
+
+  beforeEach(function () {
+    binary = new LocalBinary();
+    sandBox = sinon.sandbox.create();
+    tempDownloadPath = path.join(process.cwd(), 'download-proxy-auth');
+  });
+
+  afterEach(function () {
+    sandBox.restore();
+    rimraf.sync(tempDownloadPath);
+  });
+
+  it('sends proxy credentials on the CONNECT agent used by the async download', function (done) {
+    sandBox.stub(binary, 'getDownloadPath', function (conf, retries, callback) {
+      callback(null, 'https://example.invalid/fake-binary');
+    });
+    sandBox.stub(https, 'get', function (options) {
+      check(done, function () {
+        expect(options.agent.proxy.host).to.equal('127.0.0.1');
+        expect(String(options.agent.proxy.port)).to.equal('8080');
+        expect(options.agent.proxy.auth).to.equal('proxyuser:proxypass');
+      });
+      return { on: function () { return this; } };
+    });
+
+    binary.download({
+      proxyHost: '127.0.0.1',
+      proxyPort: 8080,
+      proxyUser: 'proxyuser',
+      proxyPass: 'proxypass'
+    }, tempDownloadPath, function () {});
+  });
+
+  it('does not set agent auth when no proxy credentials are configured', function (done) {
+    sandBox.stub(binary, 'getDownloadPath', function (conf, retries, callback) {
+      callback(null, 'https://example.invalid/fake-binary');
+    });
+    sandBox.stub(https, 'get', function (options) {
+      check(done, function () {
+        expect(options.agent.proxy.auth).to.equal(undefined);
+      });
+      return { on: function () { return this; } };
+    });
+
+    binary.download({ proxyHost: '127.0.0.1', proxyPort: 8080 }, tempDownloadPath, function () {});
+  });
+
+  it('passes proxy credentials to the spawned download.js child via env, not argv', function () {
+    var spawnStub = sandBox.stub(childProcess, 'spawnSync', function () {
+      return { stdout: Buffer.from('ok'), stderr: Buffer.from('') };
+    });
+    sandBox.stub(fs, 'existsSync', function () { return true; });
+    sandBox.stub(fs, 'chmodSync', function () {});
+
+    binary.downloadSync({
+      proxyHost: '127.0.0.1',
+      proxyPort: 8080,
+      proxyUser: 'proxyuser',
+      proxyPass: 'proxypass'
+    }, tempDownloadPath, 0);
+
+    var call = spawnStub.getCall(0);
+    expect(call.args[1]).to.not.contain('proxyuser');
+    expect(call.args[1]).to.not.contain('proxypass');
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_USER).to.equal('proxyuser');
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_PASS).to.equal('proxypass');
+  });
+
+  it('passes proxy credentials to the spawned fetchDownloadSourceUrl.js child via env, not argv', function () {
+    var spawnStub = sandBox.stub(childProcess, 'spawnSync', function () {
+      return { stdout: Buffer.from('https://example.invalid'), stderr: Buffer.from('') };
+    });
+
+    binary.getSourceUrlSync({
+      proxyHost: '127.0.0.1',
+      proxyPort: 8080,
+      proxyUser: 'proxyuser',
+      proxyPass: 'proxypass'
+    }, 0);
+
+    var call = spawnStub.getCall(0);
+    expect(call.args[1]).to.not.contain('proxyuser');
+    expect(call.args[1]).to.not.contain('proxypass');
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_USER).to.equal('proxyuser');
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_PASS).to.equal('proxypass');
+  });
+
+  it('forwards proxyUser/proxyPass from Local config through to the download child process env', function () {
+    var spawnStub = sandBox.stub(childProcess, 'spawnSync', function () {
+      return { stdout: Buffer.from('https://example.invalid'), stderr: Buffer.from('') };
+    });
+    // Make the sync path succeed on the first attempt instead of retrying:
+    // downloadSync's spawnSync is stubbed and never actually writes a binary,
+    // so without this the real retry loop (async via fs.unlink) keeps firing
+    // child processes after the test has already finished and its stubs are
+    // restored.
+    sandBox.stub(fs, 'existsSync', function () { return true; });
+    sandBox.stub(fs, 'chmodSync', function () {});
+
+    var bsLocal = new Local();
+    bsLocal.proxyHost = '127.0.0.1';
+    bsLocal.proxyPort = 8080;
+    bsLocal.proxyUser = 'proxyuser';
+    bsLocal.proxyPass = 'proxypass';
+
+    // No callback -> the sync path, which ends in the same spawnSync used by
+    // getSourceUrlSync/downloadSync, whichever this hits first with an empty
+    // binary directory.
+    bsLocal.getBinaryPath();
+
+    expect(spawnStub.called).to.equal(true);
+    var call = spawnStub.getCall(0);
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_USER).to.equal('proxyuser');
+    expect(call.args[2].env.BROWSERSTACK_LOCAL_PROXY_PASS).to.equal('proxypass');
+  });
+});
+
 // Regression tests: the binary-download fallback signalling used to live on
 // process.env, so (a) a value planted in process.env steered the download to an
 // arbitrary host with no validation, and (b) a failure on one Local instance bled
