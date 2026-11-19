@@ -80,6 +80,8 @@ To use a proxy for local testing -
 * proxyPass: Password for USERNAME, will be ignored if USERNAME is empty or not specified
 * useCaCertificate: Path to ca cert file, if required
 
+The same settings, including proxyUser/proxyPass and useCaCertificate, are used when the library downloads the BrowserStack Local binary. The download goes through the proxy only when both proxyHost and proxyPort are set.
+
 ```js
 bs_local_args = { 'key': '<browserstack-accesskey>', 'proxyHost': '127.0.0.1', 'proxyPort': '8000', 'proxyUser': 'user', 'proxyPass': 'password', 'useCaCertificate': '/Users/test/cert.pem' }
 ```
